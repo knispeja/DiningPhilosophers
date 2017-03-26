@@ -70,20 +70,34 @@ public class Client implements Runnable {
 			//client code that will run continuously
 			if(!leftMessageQueue.isEmpty()) {
 				// Send message to left neighbor
+				try {
+					pwLeft.println(leftMessageQueue.take());
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 			if(!rightMessageQueue.isEmpty()) {
 				// Send message to right neighbor
+				try {
+					pwRight.println(rightMessageQueue.take());
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 			
-			if(something)
-				break;
+//			if(something)
+//				break;
 		}
 		
-		try {
-			clientLeft.close();
-			clientRight.close();
-		} catch (IOException e) {
-		}
-		
+//		try {
+//			clientLeft.close();
+//			clientRight.close();
+//		} catch (IOException e) {
+//		}	
 	}
+	
+	
+	
 }
