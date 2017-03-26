@@ -1,5 +1,15 @@
+import java.util.concurrent.BlockingQueue;
+
 class Server implements Runnable{
 
+	private int port;
+	private BlockingQueue<String> requests;
+	
+	public Server(int port, BlockingQueue<String> requests) {
+		this.port = port;
+		this.requests = requests;
+	}
+	
 	@Override
 	public void run() {
 		//all server code here
