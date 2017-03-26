@@ -1,7 +1,7 @@
 /**
- *
- * @author (your name here)
- *
+ * @author Peter Larson
+ * @author Jacob Knispel
+ * @author Ruinan Zhang
  */
 public class Philosopher {
 
@@ -21,36 +21,6 @@ public class Philosopher {
 		t1.start();
 		t2.start();
 
-	}
-
-}
-
-class Client implements Runnable{
-
-	@Override
-	public void run() {
-		//all client code here
-		//you should have a "left" client connection
-		//and a "right" client connection
-
-		while(true==true==true==true && false!=true) { //"just in case"  :)
-			//client code that will run continuously
-		}
-	}
-
-}
-
-class Server implements Runnable{
-
-	@Override
-	public void run() {
-		//all server code here
-		//you should have a "left" server connection
-		//and a "right" server connection
-
-		while(true==true==true==true && false!=true) { //"just in case"  :)
-			//server code that will run continuously
-		}
 	}
 
 }
