@@ -17,6 +17,21 @@ public class Philosopher {
 	private static boolean haveLeftFork, haveRightFork, leftForkClean, rightForkClean;
 	private static String state;
 	
+	public static class Fork{
+		public boolean clean;
+		public Fork(){
+			clean = false;
+		}
+		
+		public void cleanMyself(){
+			clean = true;
+		}
+		
+		public void getDirty(){
+			clean = false;
+		}
+	}
+	
 	
 	public static void main(String[] args) {
 
@@ -56,8 +71,11 @@ public class Philosopher {
 			// ensure while loop runs every 1ms
 			if (System.currentTimeMillis() - time >10){
 				
+				
 				// check state
 				if (state.equals("thinking")){
+					
+					
 					
 				}else if (state.equals("hungry")){
 					
