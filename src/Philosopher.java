@@ -20,8 +20,13 @@ public class Philosopher {
 	
 	public static class Fork{
 		public boolean clean;
+		public boolean exists;
+		public boolean askedFor;
+		
 		public Fork(){
-			clean = false;
+			this.clean = false;
+			this.exists = false;
+			this.askedFor = false;
 		}
 		
 		public void cleanMyself(){
@@ -34,19 +39,19 @@ public class Philosopher {
 	}
 	
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 
 		BlockingQueue<Request> requests = new ArrayBlockingQueue<Request>(NEIGHBORS);
-		
-		leftForkClean = false;
-		rightForkClean = false;
 		
 		state = "thinking";
 		
 		hungry = false;
 		
 		// initialize haveLeftFork and haveRightFork with args
-		
+		Fork leftHand = new Fork();
+		Fork rightHand = new Fork();
+		leftHand.exists = true;
+		rightHand.exists = true;
 		String ipLeft = "127.0.0.1";
 		int portLeft = 8080;
 		String ipRight = "127.0.0.1";
@@ -73,33 +78,61 @@ public class Philosopher {
 			// ensure while loop runs every 1ms
 			if (System.currentTimeMillis() - time >10){
 				
-				
 				// check state
-				if (state.equals("thinking")){
+				if (state.equals("hungry")){
+					if (!leftHand.exists && !leftHand.askedFor) {
+						client.sendMessageToNeighbor(Philosopher.CAN_I_HAVE_YOUR_FORK, true);
+						leftHand.askedFor = true;
+					}
+					if (!rightHand.exists && !rightHand.askedFor) {
+						client.sendMessageToNeighbor(Philosopher.CAN_I_HAVE_YOUR_FORK, false);
+						rightHand.askedFor = true;
+					}
 					
-
-				}else if (state.equals("hungry")){
-					
-					
-				}else if (state.equals("eating")){
+					if (leftHand.exists && rightHand.exists) {
+						state = "eating";
+					}
+				}
+				
+				if (state.equals("eating")){
 					if (eatingTurns > eatingThreshold){
-						state = "thinking";
 						eatingTurns = 0;
+						leftHand.getDirty();
+						rightHand.getDirty();
+						state = "thinking";
 					}else{
 						eatingTurns++;
 					}
-				}else{
-					System.err.println("something with the state is wrong");
-				}
-				
-				if (!state.equals("eating")){
+				} else {
 					// Handle requests
 					Request request;
 					while((request = requests.poll()) != null) {
 						if(request.ip.equals(ipLeft)) {
-							System.out.println("Request from left: " + request.message);
+							if(request.message.equals(Philosopher.CAN_I_HAVE_YOUR_FORK)) {
+								if(leftHand.clean) {
+									requests.put(request);
+								} else {
+									client.sendMessageToNeighbor(Philosopher.YES, true);
+									leftHand.exists = false;
+								}
+							} else if(request.message.equals(Philosopher.YES)) {
+								leftHand.exists = true;
+								leftHand.askedFor = false;
+								leftHand.cleanMyself();
+							}
 						} else if (request.ip.equals(ipRight)) {
-							System.out.println("Request from right: " + request.message);
+							if(request.message.equals(Philosopher.CAN_I_HAVE_YOUR_FORK)) {
+								if(rightHand.clean) {
+									requests.put(request);
+								} else {
+									client.sendMessageToNeighbor(Philosopher.YES, false);
+									rightHand.exists = false;
+								}
+							} else if(request.message.equals(Philosopher.YES)) {
+								rightHand.exists = true;
+								rightHand.askedFor = false;
+								rightHand.cleanMyself();
+							}
 						} else {
 							System.err.println("Request received from invalid source: " + request.ip);
 						}
