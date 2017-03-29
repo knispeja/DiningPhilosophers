@@ -1,5 +1,3 @@
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -10,6 +8,9 @@ import java.util.concurrent.BlockingQueue;
  */
 public class Philosopher {
 
+	public static final String CAN_I_HAVE_YOUR_FORK = "canIhaveyourfork";
+	public static final String YES = "yes";
+	
 	private static final int PORT = 8080;
 	private static final int NEIGHBORS = 2;
 	private static boolean hungry;
@@ -35,7 +36,7 @@ public class Philosopher {
 	
 	public static void main(String[] args) {
 
-		BlockingQueue<String> requests = new ArrayBlockingQueue<String>(NEIGHBORS);
+		BlockingQueue<Request> requests = new ArrayBlockingQueue<Request>(NEIGHBORS);
 		
 		leftForkClean = false;
 		rightForkClean = false;
@@ -46,13 +47,14 @@ public class Philosopher {
 		
 		// initialize haveLeftFork and haveRightFork with args
 		
-		
-		
-		
+		String ipLeft = "127.0.0.1";
+		int portLeft = 8080;
+		String ipRight = "127.0.0.1";
+		int portRight = 8080;
 		
 		//create new instances of Client and Server
-		Runnable client = new Client();
-		Runnable server = new Server(PORT, requests);
+		Client client = new Client(ipLeft, portLeft, ipRight, portRight);
+		Server server = new Server(PORT, requests);
 
 		//Create threads to run Client and Server as Threads
 		Thread t1 = new Thread(client);
@@ -65,7 +67,7 @@ public class Philosopher {
 		long time = System.currentTimeMillis();
 		long deathThreshold = 100;
 		int eatingThreshold =5;
-		int eatingTurns ;
+		int eatingTurns = 0;
 		
 		while(true) {
 			// ensure while loop runs every 1ms
@@ -75,8 +77,7 @@ public class Philosopher {
 				// check state
 				if (state.equals("thinking")){
 					
-					
-					
+
 				}else if (state.equals("hungry")){
 					
 					
@@ -93,9 +94,15 @@ public class Philosopher {
 				
 				if (!state.equals("eating")){
 					// Handle requests
-					String request;
+					Request request;
 					while((request = requests.poll()) != null) {
-						// Answer request
+						if(request.ip.equals(ipLeft)) {
+							System.out.println("Request from left: " + request.message);
+						} else if (request.ip.equals(ipRight)) {
+							System.out.println("Request from right: " + request.message);
+						} else {
+							System.err.println("Request received from invalid source: " + request.ip);
+						}
 					}
 				}
 				
