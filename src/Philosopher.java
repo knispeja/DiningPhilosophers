@@ -7,19 +7,19 @@ import java.util.concurrent.BlockingQueue;
  * @author Ruinan Zhang
  */
 public class Philosopher {
-
+	
+	private static final String CAN_I_HAVE_YOUR_FORK = "Can I have your fork, please?";
+	private static final String YES = "Fine, take it.";
+	
+	private static final int PORT = 8080;
+	private static final int NEIGHBORS = 2;
+	
 	private static final long DELAY_BETWEEN_TURNS_MS = 10;
 	
 	private static final int TURNS_HUNGRY_UNTIL_DEATH = 100;
 	private static final int TURNS_TAKEN_TO_EAT = 5;
 	
 	private static final float HUNGRY_PROBABILITY = 0.01f;
-	
-	private static final String CAN_I_HAVE_YOUR_FORK = "canIhaveyourfork";
-	private static final String YES = "yes";
-	
-	private static final int PORT = 8080;
-	private static final int NEIGHBORS = 2;
 	
 	private static enum State {
 		THINKING,
@@ -28,7 +28,7 @@ public class Philosopher {
 	}
 	
 	public static void main(String[] args) throws InterruptedException {
-
+		
 		BlockingQueue<Request> requests = new ArrayBlockingQueue<Request>(NEIGHBORS);
 		
 		State state = State.THINKING;
@@ -39,12 +39,10 @@ public class Philosopher {
 		leftHand.exists = true;
 		rightHand.exists = true;
 		String ipLeft = "137.112.223.192";
-		int portLeft = 8080;
 		String ipRight = "137.112.226.203";
-		int portRight = 8080;
 		
 		// Create new instances of Client and Server
-		Client client = new Client(ipLeft, portLeft, ipRight, portRight);
+		Client client = new Client(ipLeft, PORT, ipRight, PORT);
 		Server server = new Server(PORT, requests);
 
 		// Create threads to run Client and Server as Threads
