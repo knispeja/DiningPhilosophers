@@ -8,46 +8,32 @@ import java.util.concurrent.BlockingQueue;
  */
 public class Philosopher {
 
-	public static final String CAN_I_HAVE_YOUR_FORK = "canIhaveyourfork";
-	public static final String YES = "yes";
+	private static final long DELAY_BETWEEN_TURNS_MS = 10;
+	
+	private static final int TURNS_HUNGRY_UNTIL_DEATH = 100;
+	private static final int TURNS_TAKEN_TO_EAT = 5;
+	
+	private static final float HUNGRY_PROBABILITY = 0.01f;
+	
+	private static final String CAN_I_HAVE_YOUR_FORK = "canIhaveyourfork";
+	private static final String YES = "yes";
 	
 	private static final int PORT = 8080;
 	private static final int NEIGHBORS = 2;
-	private static boolean hungry;
 	
-	private static boolean haveLeftFork, haveRightFork, leftForkClean, rightForkClean;
-	private static String state;
-	
-	public static class Fork{
-		public boolean clean;
-		public boolean exists;
-		public boolean askedFor;
-		
-		public Fork(){
-			this.clean = false;
-			this.exists = false;
-			this.askedFor = false;
-		}
-		
-		public void cleanMyself(){
-			clean = true;
-		}
-		
-		public void getDirty(){
-			clean = false;
-		}
+	private static enum State {
+		THINKING,
+		EATING,
+		HUNGRY
 	}
-	
 	
 	public static void main(String[] args) throws InterruptedException {
 
 		BlockingQueue<Request> requests = new ArrayBlockingQueue<Request>(NEIGHBORS);
 		
-		state = "thinking";
+		State state = State.THINKING;
 		
-		hungry = false;
-		
-		// initialize haveLeftFork and haveRightFork with args
+		// TODO: initialize these variables using args or the GUI
 		Fork leftHand = new Fork();
 		Fork rightHand = new Fork();
 		leftHand.exists = true;
@@ -57,29 +43,40 @@ public class Philosopher {
 		String ipRight = "137.112.226.203";
 		int portRight = 8080;
 		
-		//create new instances of Client and Server
+		// Create new instances of Client and Server
 		Client client = new Client(ipLeft, portLeft, ipRight, portRight);
 		Server server = new Server(PORT, requests);
 
-		//Create threads to run Client and Server as Threads
+		// Create threads to run Client and Server as Threads
 		Thread t1 = new Thread(client);
 		Thread t2 = new Thread(server);
 
-		//start the threads
+		// Start the threads
 		t1.start();
 		t2.start();
 		
 		long time = System.currentTimeMillis();
-		long deathThreshold = 100;
-		int eatingThreshold =5;
+		int hungryTurns = 0;
 		int eatingTurns = 0;
 		
 		while(true) {
-			// ensure while loop runs every 1ms
-			if (System.currentTimeMillis() - time >10){
+			if (System.currentTimeMillis() - time > DELAY_BETWEEN_TURNS_MS){
 				
-				// check state
-				if (state.equals("hungry")){
+				time = System.currentTimeMillis();
+				
+				if (state.equals(State.THINKING)) {
+					if (Math.random() < HUNGRY_PROBABILITY){
+						state = State.HUNGRY;
+						hungryTurns = 0;
+					}
+				}
+
+				if (state.equals(State.HUNGRY)) {
+					
+					if (hungryTurns++ == Philosopher.TURNS_HUNGRY_UNTIL_DEATH) {
+						System.out.println("R.I.P. I'm a ghost");
+					}
+					
 					if (!leftHand.exists && !leftHand.askedFor) {
 						System.out.println("Asking my left neighbor for his fork...");
 						client.sendMessageToNeighbor(Philosopher.CAN_I_HAVE_YOUR_FORK, true);
@@ -93,16 +90,17 @@ public class Philosopher {
 					
 					if (leftHand.exists && rightHand.exists) {
 						System.out.println("Beginning to eat!");
-						state = "eating";
+						state = State.EATING;
 					}
 				}
 				
-				if (state.equals("eating")){
-					if (eatingTurns > eatingThreshold){
+				if (state.equals(State.EATING)) {
+					if (eatingTurns > Philosopher.TURNS_TAKEN_TO_EAT){
+						System.out.println("Done eating. That was delicious!");
 						eatingTurns = 0;
-						leftHand.getDirty();
-						rightHand.getDirty();
-						state = "thinking";
+						leftHand.clean = false;
+						rightHand.clean = false;;
+						state = State.THINKING;
 					}else{
 						eatingTurns++;
 					}
@@ -123,7 +121,7 @@ public class Philosopher {
 							} else if(request.message.equals(Philosopher.YES)) {
 								leftHand.exists = true;
 								leftHand.askedFor = false;
-								leftHand.cleanMyself();
+								leftHand.clean = true;
 							}
 						} else if (request.ip.equals(ipRight)) {
 							System.out.println("Message received from right: " + request.message);
@@ -138,33 +136,13 @@ public class Philosopher {
 							} else if(request.message.equals(Philosopher.YES)) {
 								rightHand.exists = true;
 								rightHand.askedFor = false;
-								rightHand.cleanMyself();
+								rightHand.clean = true;;
 							}
 						} else {
 							System.err.println("Request received from invalid source: " + request.ip);
 						}
 					}
 				}
-				
-						
-				
-//				
-//				// Decide if hungry
-//				// randomize random state
-//				if (hungry){
-//					if (System.currentTimeMillis() - hungryStartTime > deathThreshold){
-//						System.err.println(" Philosopher Died !!! Really Bad");
-//						System.exit(1);
-//					}
-//				}else if (Math.random() < 0.1){
-//					hungry = true;
-//					hungryStartTime = System.currentTimeMillis();
-//				}
-				
-				
-				
-				time = System.currentTimeMillis();
-				
 			}
 		}
 	}
