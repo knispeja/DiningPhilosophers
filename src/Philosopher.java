@@ -52,9 +52,9 @@ public class Philosopher {
 		Fork rightHand = new Fork();
 		leftHand.exists = true;
 		rightHand.exists = true;
-		String ipLeft = "127.0.0.1";
+		String ipLeft = "137.112.223.192";
 		int portLeft = 8080;
-		String ipRight = "127.0.0.1";
+		String ipRight = "137.112.226.203";
 		int portRight = 8080;
 		
 		//create new instances of Client and Server
@@ -81,15 +81,18 @@ public class Philosopher {
 				// check state
 				if (state.equals("hungry")){
 					if (!leftHand.exists && !leftHand.askedFor) {
+						System.out.println("Asking my left neighbor for his fork...");
 						client.sendMessageToNeighbor(Philosopher.CAN_I_HAVE_YOUR_FORK, true);
 						leftHand.askedFor = true;
 					}
 					if (!rightHand.exists && !rightHand.askedFor) {
+						System.out.println("Asking my right neighbor for his fork...");
 						client.sendMessageToNeighbor(Philosopher.CAN_I_HAVE_YOUR_FORK, false);
 						rightHand.askedFor = true;
 					}
 					
 					if (leftHand.exists && rightHand.exists) {
+						System.out.println("Beginning to eat!");
 						state = "eating";
 					}
 				}
@@ -108,10 +111,12 @@ public class Philosopher {
 					Request request;
 					while((request = requests.poll()) != null) {
 						if(request.ip.equals(ipLeft)) {
+							System.out.println("Message received from left: " + request.message);
 							if(request.message.equals(Philosopher.CAN_I_HAVE_YOUR_FORK)) {
 								if(leftHand.clean) {
 									requests.put(request);
 								} else {
+									System.out.println("Giving my left neighbor the fork...");
 									client.sendMessageToNeighbor(Philosopher.YES, true);
 									leftHand.exists = false;
 								}
@@ -121,10 +126,12 @@ public class Philosopher {
 								leftHand.cleanMyself();
 							}
 						} else if (request.ip.equals(ipRight)) {
+							System.out.println("Message received from right: " + request.message);
 							if(request.message.equals(Philosopher.CAN_I_HAVE_YOUR_FORK)) {
 								if(rightHand.clean) {
 									requests.put(request);
 								} else {
+									System.out.println("Giving my right neighbor the fork...");
 									client.sendMessageToNeighbor(Philosopher.YES, false);
 									rightHand.exists = false;
 								}

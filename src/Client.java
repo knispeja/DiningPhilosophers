@@ -34,61 +34,48 @@ public class Client implements Runnable {
 	
 	@Override
 	public void run() {
-		Socket clientLeft = null;
-		Socket clientRight = null;
-		PrintStream pwLeft = null;
-		PrintStream pwRight = null;
-		boolean left = false;
-		boolean right = false;
-		
-		// While neighbor servers are not up
-		while(!left || !right) {
-			if(!left) {
+		while(true) {
+			//client code that will run continuously
+			if(!leftMessageQueue.isEmpty()) {
+				Socket clientLeft = null;
+				PrintStream pwLeft = null;
 				try {
 					clientLeft = new Socket(this.ipLeft, this.portLeft);
 					pwLeft = new PrintStream(clientLeft.getOutputStream());
-					left = true;
 				} catch (IOException e) {
 					System.err.print("Left: ");
 					System.err.println(e.getMessage());
 				}
-			}
-			
-			if(!right) {
-				try {
-					clientRight = new Socket(this.ipRight, this.portRight);
-					pwRight = new PrintStream(clientRight.getOutputStream());
-					right = true;
-				} catch (IOException e) {
-					System.err.print("Right: ");
-					System.err.println(e.getMessage());
-				}
-			}
-		}
-		
-		while(true) {
-			//client code that will run continuously
-			if(!leftMessageQueue.isEmpty()) {
+				
 				// Send message to left neighbor
 				try {
 					pwLeft.println(leftMessageQueue.take());
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
+					pwLeft.close();
+					clientLeft.close();
+				} catch (InterruptedException | IOException e) {
 					e.printStackTrace();
 				}
 			}
 			if(!rightMessageQueue.isEmpty()) {
+				PrintStream pwRight = null;
+				Socket clientRight = null;
+				try {
+					clientRight = new Socket(this.ipRight, this.portRight);
+					pwRight = new PrintStream(clientRight.getOutputStream());
+				} catch (IOException e) {
+					System.err.print("Right: ");
+					System.err.println(e.getMessage());
+				}
+				
 				// Send message to right neighbor
 				try {
 					pwRight.println(rightMessageQueue.take());
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
+					pwRight.close();
+					clientRight.close();
+				} catch (InterruptedException | IOException e) {
 					e.printStackTrace();
 				}
 			}
-			
-//			if(something)
-//				break;
 		}
 		
 //		try {
