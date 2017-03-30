@@ -14,30 +14,41 @@ public class Philosopher {
 	private static final int PORT = 8080;
 	private static final int NEIGHBORS = 2;
 	
-	private static final long DELAY_BETWEEN_TURNS_MS = 10;
+	private static final long DELAY_BETWEEN_TURNS_MS = 1000;
 	
 	private static final int TURNS_HUNGRY_UNTIL_DEATH = 100;
 	private static final int TURNS_TAKEN_TO_EAT = 5;
 	
 	private static final float HUNGRY_PROBABILITY = 0.01f;
 	
-	private static enum State {
+	public static boolean hungerFlag = false;
+	public static boolean satisfactionFlag = false;
+	
+	public static enum State {
 		THINKING,
 		EATING,
 		HUNGRY
 	}
 	
+	public static Fork leftHand;
+	public static Fork rightHand;
+	public static State state;
+	
 	public static void main(String[] args) throws InterruptedException {
 		
 		BlockingQueue<Request> requests = new ArrayBlockingQueue<Request>(NEIGHBORS);
 		
-		State state = State.THINKING;
+		state = State.EATING;
 		
 		// TODO: initialize these variables using args or the GUI
-		Fork leftHand = new Fork();
-		Fork rightHand = new Fork();
+		leftHand = new Fork();
+		rightHand = new Fork();
 		leftHand.exists = true;
 		rightHand.exists = true;
+		
+		PhilosopherGui gui = new PhilosopherGui();
+		
+		
 		String ipLeft = "137.112.223.192";
 		String ipRight = "137.112.226.203";
 		
@@ -56,16 +67,22 @@ public class Philosopher {
 		long time = System.currentTimeMillis();
 		int hungryTurns = 0;
 		int eatingTurns = 0;
+
+		
 		
 		while(true) {
 			if (System.currentTimeMillis() - time > DELAY_BETWEEN_TURNS_MS){
 				
+				
 				time = System.currentTimeMillis();
 				
 				if (state.equals(State.THINKING)) {
-					if (Math.random() < HUNGRY_PROBABILITY){
+					if (Math.random() < HUNGRY_PROBABILITY || hungerFlag){
 						state = State.HUNGRY;
+						gui.updateGUI();
 						hungryTurns = 0;
+						hungerFlag = false;
+						gui.updateGUI();
 					}
 				}
 
@@ -89,16 +106,19 @@ public class Philosopher {
 					if (leftHand.exists && rightHand.exists) {
 						System.out.println("Beginning to eat!");
 						state = State.EATING;
+						gui.updateGUI();
 					}
 				}
 				
 				if (state.equals(State.EATING)) {
-					if (eatingTurns > Philosopher.TURNS_TAKEN_TO_EAT){
+					if (eatingTurns > Philosopher.TURNS_TAKEN_TO_EAT || satisfactionFlag){
 						System.out.println("Done eating. That was delicious!");
 						eatingTurns = 0;
 						leftHand.clean = false;
-						rightHand.clean = false;;
+						rightHand.clean = false;
 						state = State.THINKING;
+						satisfactionFlag = false;
+						gui.updateGUI();
 					}else{
 						eatingTurns++;
 					}
@@ -139,6 +159,7 @@ public class Philosopher {
 						} else {
 							System.err.println("Request received from invalid source: " + request.ip);
 						}
+						gui.updateGUI();
 					}
 				}
 			}
