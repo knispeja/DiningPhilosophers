@@ -44,49 +44,29 @@ public class Client implements Runnable {
 				try {
 					clientLeft = new Socket(this.ipLeft, this.portLeft);
 					pwLeft = new PrintStream(clientLeft.getOutputStream());
-				} catch (IOException e) {
-					System.err.print("Left: ");
-					System.err.println(e.getMessage());
-				}
-				
-				// Send message to left neighbor
-				try {
 					pwLeft.println(leftMessageQueue.take());
 					pwLeft.close();
 					clientLeft.close();
-				} catch (InterruptedException | IOException e) {
-					e.printStackTrace();
+				} catch (IOException | InterruptedException e) {
+					System.err.print("Left: ");
+					System.err.println(e.getMessage());
 				}
 			}
+			
 			if(!rightMessageQueue.isEmpty()) {
 				PrintStream pwRight = null;
 				Socket clientRight = null;
 				try {
 					clientRight = new Socket(this.ipRight, this.portRight);
 					pwRight = new PrintStream(clientRight.getOutputStream());
-				} catch (IOException e) {
-					System.err.print("Right: ");
-					System.err.println(e.getMessage());
-				}
-				
-				// Send message to right neighbor
-				try {
 					pwRight.println(rightMessageQueue.take());
 					pwRight.close();
 					clientRight.close();
-				} catch (InterruptedException | IOException e) {
-					e.printStackTrace();
+				} catch (IOException | InterruptedException e) {
+					System.err.print("Right: ");
+					System.err.println(e.getMessage());
 				}
 			}
 		}
-		
-//		try {
-//			clientLeft.close();
-//			clientRight.close();
-//		} catch (IOException e) {
-//		}	
-	}
-	
-	
-	
+	}	
 }

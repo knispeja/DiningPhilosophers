@@ -24,12 +24,12 @@ public class Philosopher {
 	private static final int PORT = 8080;
 	private static final int QUEUE_SIZE = 4;
 	
-	private static final long DELAY_BETWEEN_TURNS_MS = 500;
+	private static final long DELAY_BETWEEN_TURNS_MS = 100;
 	
 	private static final int TURNS_HUNGRY_UNTIL_DEATH = 100;
-	private static final int TURNS_TAKEN_TO_EAT = 6;
+	private static final int TURNS_TAKEN_TO_EAT = 4;
 	
-	private static final float HUNGRY_PROBABILITY = 0.15f;
+	private static final float HUNGRY_PROBABILITY = 0.21f;
 	
 	public static boolean hungerFlag = false;
 	public static boolean satisfactionFlag = false;
@@ -133,30 +133,6 @@ public class Philosopher {
 						gui.updateGUI();
 					}
 				}
-
-				if (state.equals(State.HUNGRY)) {
-					
-					if (hungryTurns++ == Philosopher.TURNS_HUNGRY_UNTIL_DEATH) {
-						System.out.println("R.I.P. I'm a ghost");
-					}
-					
-					if (!leftHand.exists && !leftHand.askedFor) {
-						System.out.println("Asking my left neighbor for his fork...");
-						client.sendMessageToNeighbor(Philosopher.CAN_I_HAVE_YOUR_FORK, true);
-						leftHand.askedFor = true;
-					}
-					if (!rightHand.exists && !rightHand.askedFor) {
-						System.out.println("Asking my right neighbor for his fork...");
-						client.sendMessageToNeighbor(Philosopher.CAN_I_HAVE_YOUR_FORK, false);
-						rightHand.askedFor = true;
-					}
-					
-					if (leftHand.exists && rightHand.exists) {
-						System.out.println("Beginning to eat!");
-						state = State.EATING;
-						gui.updateGUI();
-					}
-				}
 				
 				if (state.equals(State.EATING)) {
 					if (eatingTurns > Philosopher.TURNS_TAKEN_TO_EAT || satisfactionFlag){
@@ -204,11 +180,35 @@ public class Philosopher {
 							} else if(request.message.equals(Philosopher.YES)) {
 								rightHand.exists = true;
 								rightHand.askedFor = false;
-								rightHand.clean = true;;
+								rightHand.clean = true;
 							}
 						} else {
 							System.err.println("Request received from invalid source: " + request.ip);
 						}
+						gui.updateGUI();
+					}
+				}
+				
+				if (state.equals(State.HUNGRY)) {
+					
+					if (hungryTurns++ == Philosopher.TURNS_HUNGRY_UNTIL_DEATH) {
+						System.out.println("R.I.P. I'm a ghost");
+					}
+					
+					if (!leftHand.exists && !leftHand.askedFor) {
+						System.out.println("Asking my left neighbor for his fork...");
+						client.sendMessageToNeighbor(Philosopher.CAN_I_HAVE_YOUR_FORK, true);
+						leftHand.askedFor = true;
+					}
+					if (!rightHand.exists && !rightHand.askedFor) {
+						System.out.println("Asking my right neighbor for his fork...");
+						client.sendMessageToNeighbor(Philosopher.CAN_I_HAVE_YOUR_FORK, false);
+						rightHand.askedFor = true;
+					}
+					
+					if (leftHand.exists && rightHand.exists) {
+						System.out.println("Beginning to eat!");
+						state = State.EATING;
 						gui.updateGUI();
 					}
 				}
