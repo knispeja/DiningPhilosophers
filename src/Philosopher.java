@@ -14,7 +14,7 @@ public class Philosopher {
 	private static final int PORT = 8080;
 	private static final int NEIGHBORS = 2;
 	
-	private static final long DELAY_BETWEEN_TURNS_MS = 1000;
+	private static final long DELAY_BETWEEN_TURNS_MS = 100;
 	
 	private static final int TURNS_HUNGRY_UNTIL_DEATH = 100;
 	private static final int TURNS_TAKEN_TO_EAT = 5;
