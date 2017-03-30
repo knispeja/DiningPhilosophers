@@ -14,12 +14,12 @@ public class Philosopher {
 	private static final int PORT = 8080;
 	private static final int NEIGHBORS = 2;
 	
-	private static final long DELAY_BETWEEN_TURNS_MS = 100;
+	private static final long DELAY_BETWEEN_TURNS_MS = 1000;
 	
 	private static final int TURNS_HUNGRY_UNTIL_DEATH = 100;
 	private static final int TURNS_TAKEN_TO_EAT = 5;
 	
-	private static final float HUNGRY_PROBABILITY = 0.01f;
+	private static final float HUNGRY_PROBABILITY = 0.00f;
 	
 	public static boolean hungerFlag = false;
 	public static boolean satisfactionFlag = false;
@@ -38,19 +38,19 @@ public class Philosopher {
 		
 		BlockingQueue<Request> requests = new ArrayBlockingQueue<Request>(NEIGHBORS);
 		
-		state = State.EATING;
+		state = State.THINKING;
 		
 		// TODO: initialize these variables using args or the GUI
 		leftHand = new Fork();
 		rightHand = new Fork();
-		leftHand.exists = true;
-		rightHand.exists = true;
+		leftHand.exists = false;
+		rightHand.exists = false;
 		
 		PhilosopherGui gui = new PhilosopherGui();
 		
 		
-		String ipLeft = "137.112.223.192";
-		String ipRight = "137.112.226.203";
+		String ipLeft = "137.112.157.217";
+		String ipRight = "137.112.223.192";
 		
 		// Create new instances of Client and Server
 		Client client = new Client(ipLeft, PORT, ipRight, PORT);
@@ -131,6 +131,7 @@ public class Philosopher {
 							if(request.message.equals(Philosopher.CAN_I_HAVE_YOUR_FORK)) {
 								if(leftHand.clean) {
 									requests.put(request);
+									break;
 								} else {
 									System.out.println("Giving my left neighbor the fork...");
 									client.sendMessageToNeighbor(Philosopher.YES, true);
@@ -146,6 +147,7 @@ public class Philosopher {
 							if(request.message.equals(Philosopher.CAN_I_HAVE_YOUR_FORK)) {
 								if(rightHand.clean) {
 									requests.put(request);
+									break;
 								} else {
 									System.out.println("Giving my right neighbor the fork...");
 									client.sendMessageToNeighbor(Philosopher.YES, false);
