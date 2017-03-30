@@ -6,6 +6,8 @@ import java.util.concurrent.BlockingQueue;
 
 public class Client implements Runnable {
 	
+	private static final int QUEUE_SIZE = 2;
+	
 	private BlockingQueue<String> leftMessageQueue;
 	private BlockingQueue<String> rightMessageQueue;
 	
@@ -21,8 +23,8 @@ public class Client implements Runnable {
 		this.ipRight = ipRight;
 		this.portRight = portRight;
 		
-		this.leftMessageQueue = new ArrayBlockingQueue<String>(2);
-		this.rightMessageQueue = new ArrayBlockingQueue<String>(2);
+		this.leftMessageQueue = new ArrayBlockingQueue<String>(QUEUE_SIZE);
+		this.rightMessageQueue = new ArrayBlockingQueue<String>(QUEUE_SIZE);
 	}
 	
 	public void sendMessageToNeighbor(String message, boolean left) throws InterruptedException {

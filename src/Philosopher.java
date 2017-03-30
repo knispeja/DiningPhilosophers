@@ -22,7 +22,7 @@ public class Philosopher {
 	private static final String YES = "Fine, take it.";
 	
 	private static final int PORT = 8080;
-	private static final int NEIGHBORS = 2;
+	private static final int QUEUE_SIZE = 4;
 	
 	private static final long DELAY_BETWEEN_TURNS_MS = 500;
 	
@@ -97,7 +97,7 @@ public class Philosopher {
 		}
 		
 		// Initialize some important values
-		BlockingQueue<Request> requests = new ArrayBlockingQueue<Request>(NEIGHBORS);
+		BlockingQueue<Request> requests = new ArrayBlockingQueue<Request>(QUEUE_SIZE);
 		state = State.THINKING;
 		
 		// Open the GUI
