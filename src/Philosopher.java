@@ -11,8 +11,12 @@ public class Philosopher {
 	private static final String LEFT_PHILOSOPHER_IP = "-l";
 	private static final String RIGHT_PHILOSOPHER_IP = "-r";
 	
-	private static final String HAS_LEFT_FORK = "-hasLeftFork";
-	private static final String HAS_RIGHT_FORK = "-hasRightFork";
+	private static final String HAS_LEFT_FORK = "-hasleftfork";
+	private static final String HAS_RIGHT_FORK = "-hasrightfork";
+	
+	private static final String NO_GUI = "-nogui";
+	
+	private static final String HELP = "-help";
 	
 	private static final String CAN_I_HAVE_YOUR_FORK = "Can I have your fork, please?";
 	private static final String YES = "Fine, take it.";
@@ -46,6 +50,8 @@ public class Philosopher {
 	 * 		-r [right_philosopher_ip]
 	 * 		-hasLeftFork
 	 * 		-hasRightFork
+	 * 		-noGui
+	 * 		-help
 	 */
 	public static void main(String[] args) throws InterruptedException {
 		
@@ -56,9 +62,11 @@ public class Philosopher {
 		String ipLeft = "";
 		String ipRight = "";
 		
+		boolean noGUI = false;
+		
 		// Parse command line arguments
 		for(int i=0; i<args.length; i++) {
-			String arg = args[i];
+			String arg = args[i].toLowerCase();
 			if(arg.equals(LEFT_PHILOSOPHER_IP)) {
 				ipLeft = args[++i];
 			} else if(arg.equals(RIGHT_PHILOSOPHER_IP)) {
@@ -67,6 +75,16 @@ public class Philosopher {
 				leftHand.exists = true;
 			} else if(arg.equals(HAS_RIGHT_FORK)) {
 				rightHand.exists = true;
+			} else if(arg.equals(NO_GUI)) {
+				noGUI = true;
+			} else if(arg.equals(HELP)) {
+				System.out.println("Valid command line arguments (given in any order): ");
+				System.out.println("\t-l [left_philosopher_ip]");
+				System.out.println("\t-r [right_philosopher_ip]");
+				System.out.println("\t-hasLeftFork: philosopher starts with the left fork");
+				System.out.println("\t-hasRightFork: philosopher starts with the right fork");
+				System.out.println("\t-noGUI: the GUI will not open");
+				return;
 			} else {
 				System.err.println("Unrecognized flag: " + arg);
 			}
@@ -83,7 +101,7 @@ public class Philosopher {
 		state = State.THINKING;
 		
 		// Open the GUI
-		PhilosopherGui gui = new PhilosopherGui();
+		PhilosopherGui gui = new PhilosopherGui(noGUI);
 		
 		// Create new instances of Client and Server
 		Client client = new Client(ipLeft, PORT, ipRight, PORT);
@@ -100,12 +118,9 @@ public class Philosopher {
 		long time = System.currentTimeMillis();
 		int hungryTurns = 0;
 		int eatingTurns = 0;
-
-		
 		
 		while(true) {
 			if (System.currentTimeMillis() - time > DELAY_BETWEEN_TURNS_MS){
-				
 				
 				time = System.currentTimeMillis();
 				

@@ -15,8 +15,13 @@ public class PhilosopherGui {
 	private JButton hungryB;
 	private JButton satisB;
 	
+	private boolean disabled;
 	
-	public PhilosopherGui(){
+	public PhilosopherGui(boolean disabled) {
+		this.disabled = disabled;
+		if(disabled)
+			return;
+		
 		JFrame guiFrame = new JFrame();
 		guiFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         guiFrame.setTitle("Philosopher");
@@ -55,11 +60,13 @@ public class PhilosopherGui {
         
         guiFrame.setVisible(true);
         updateGUI();
-        
 	}
 	
 	
 	public void updateGUI(){
+		
+		if(disabled)
+			return;
 		
 		if(Philosopher.state.equals(Philosopher.State.THINKING)){
 			status.setText("I am thinking");
@@ -86,7 +93,5 @@ public class PhilosopherGui {
 		} else {
 			rightFork.setText("   ");
 		}
-		
-		
 	}
 }
