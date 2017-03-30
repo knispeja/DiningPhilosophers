@@ -8,6 +8,12 @@ import java.util.concurrent.BlockingQueue;
  */
 public class Philosopher {
 	
+	private static final String LEFT_PHILOSOPHER_IP = "-l";
+	private static final String RIGHT_PHILOSOPHER_IP = "-r";
+	
+	private static final String HAS_LEFT_FORK = "-hasLeftFork";
+	private static final String HAS_RIGHT_FORK = "-hasRightFork";
+	
 	private static final String CAN_I_HAVE_YOUR_FORK = "Can I have your fork, please?";
 	private static final String YES = "Fine, take it.";
 	
@@ -34,23 +40,50 @@ public class Philosopher {
 	public static Fork rightHand;
 	public static State state;
 	
+	/**
+	 * Valid flags:
+	 * 		-l [left_philosopher_ip]
+	 * 		-r [right_philosopher_ip]
+	 * 		-hasLeftFork
+	 * 		-hasRightFork
+	 */
 	public static void main(String[] args) throws InterruptedException {
 		
-		BlockingQueue<Request> requests = new ArrayBlockingQueue<Request>(NEIGHBORS);
-		
-		state = State.THINKING;
-		
-		// TODO: initialize these variables using args or the GUI
+		// Initialize these variables using args if available
 		leftHand = new Fork();
 		rightHand = new Fork();
-		leftHand.exists = false;
-		rightHand.exists = false;
+
+		String ipLeft = "";
+		String ipRight = "";
 		
+		// Parse command line arguments
+		for(int i=0; i<args.length; i++) {
+			String arg = args[i];
+			if(arg.equals(LEFT_PHILOSOPHER_IP)) {
+				ipLeft = args[++i];
+			} else if(arg.equals(RIGHT_PHILOSOPHER_IP)) {
+				ipRight = args[++i];
+			} else if(arg.equals(HAS_LEFT_FORK)) {
+				leftHand.exists = true;
+			} else if(arg.equals(HAS_RIGHT_FORK)) {
+				rightHand.exists = true;
+			} else {
+				System.err.println("Unrecognized flag: " + arg);
+			}
+		}
+		
+		// Input validation
+		if(ipLeft.isEmpty() || ipRight.isEmpty()) {
+			System.err.println("Please provide IPs for both the left and right neighbors via -l [ip] and -r [ip].");
+			return;			
+		}
+		
+		// Initialize some important values
+		BlockingQueue<Request> requests = new ArrayBlockingQueue<Request>(NEIGHBORS);
+		state = State.THINKING;
+		
+		// Open the GUI
 		PhilosopherGui gui = new PhilosopherGui();
-		
-		
-		String ipLeft = "137.112.157.217";
-		String ipRight = "137.112.223.192";
 		
 		// Create new instances of Client and Server
 		Client client = new Client(ipLeft, PORT, ipRight, PORT);
