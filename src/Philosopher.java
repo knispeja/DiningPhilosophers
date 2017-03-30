@@ -8,29 +8,27 @@ import java.util.concurrent.BlockingQueue;
  */
 public class Philosopher {
 	
+	// Command line flags
 	private static final String LEFT_PHILOSOPHER_IP = "-l";
 	private static final String RIGHT_PHILOSOPHER_IP = "-r";
-	
 	private static final String HAS_LEFT_FORK = "-hasleftfork";
 	private static final String HAS_RIGHT_FORK = "-hasrightfork";
-	
 	private static final String NO_GUI = "-nogui";
-	
 	private static final String HELP = "-help";
 	
-	private static final String CAN_I_HAVE_YOUR_FORK = "Can I have your fork, please?";
-	private static final String YES = "Fine, take it.";
-	
+	// Connectivity
 	private static final int PORT = 8080;
+	
+	// Queue size, should be [# of possible requests]*[# of neighbors] = 2*2 = 4
 	private static final int QUEUE_SIZE = 4;
 	
-	private static final long DELAY_BETWEEN_TURNS_MS = 100;
+	// Constants dictating the philosopher's behavior
+	private static final long DELAY_BETWEEN_TURNS_MS = 100; // Millisecond delay between turns
+	private static final int TURNS_HUNGRY_UNTIL_DEATH = 100; // Turns the philosopher can be hungry without dying
+	private static final int TURNS_TAKEN_TO_EAT = 4; // Turns the philosopher takes to eat
+	private static final float HUNGRY_PROBABILITY = 0.21f; // Probability the philosopher will become hungry on a given turn
 	
-	private static final int TURNS_HUNGRY_UNTIL_DEATH = 100;
-	private static final int TURNS_TAKEN_TO_EAT = 4;
-	
-	private static final float HUNGRY_PROBABILITY = 0.21f;
-	
+	// Publicly available variables and flags, TODO move main into its own class to avoid these
 	public static boolean hungerFlag = false;
 	public static boolean satisfactionFlag = false;
 	
@@ -38,15 +36,6 @@ public class Philosopher {
 	public static Fork rightHand;
 	public static String state;
 	
-	/**
-	 * Valid flags:
-	 * 		-l [left_philosopher_ip]
-	 * 		-r [right_philosopher_ip]
-	 * 		-hasLeftFork
-	 * 		-hasRightFork
-	 * 		-noGui
-	 * 		-help
-	 */
 	public static void main(String[] args) throws InterruptedException {
 		
 		// Initialize these variables using args if available
@@ -101,19 +90,16 @@ public class Philosopher {
 		Client client = new Client(ipLeft, PORT, ipRight, PORT);
 		Server server = new Server(PORT, requests);
 
-		// Create threads to run Client and Server as Threads
-		Thread t1 = new Thread(client);
-		Thread t2 = new Thread(server);
-
-		// Start the threads
-		t1.start();
-		t2.start();
+		// Create and run Client and Server threads
+		new Thread(client).start();
+		new Thread(server).start();
 		
+		// Loop for the duration of the program...
 		long time = System.currentTimeMillis();
 		int hungryTurns = 0;
 		int eatingTurns = 0;
-		
 		while(true) {
+			
 			if (System.currentTimeMillis() - time > DELAY_BETWEEN_TURNS_MS){
 				
 				time = System.currentTimeMillis();
@@ -137,47 +123,49 @@ public class Philosopher {
 						state = State.THINKING;
 						satisfactionFlag = false;
 						gui.updateGUI();
-					}else{
+					} else {
 						eatingTurns++;
 					}
 				} else {
 					// Handle requests
 					Request request;
 					while((request = requests.poll()) != null) {
-						if(request.ip.equals(ipLeft)) {
-							System.out.println("Message received from left: " + request.message);
-							if(request.message.equals(Philosopher.CAN_I_HAVE_YOUR_FORK)) {
+						if(request.getIp().equals(ipLeft)) {
+							if(request.getMessage().equals(Request.CAN_I_HAVE_YOUR_FORK)) {
 								if(leftHand.clean) {
+									System.out.print("Ignoring for now: ");
 									requests.put(request);
 									break;
 								} else {
-									System.out.println("Giving my left neighbor the fork...");
-									client.sendMessageToNeighbor(Philosopher.YES, true);
+									System.out.print("Giving my left neighbor the fork, because: ");
+									client.sendMessageToNeighbor(Request.YES, true);
 									leftHand.exists = false;
 								}
-							} else if(request.message.equals(Philosopher.YES)) {
+							} else if(request.getMessage().equals(Request.YES)) {
 								leftHand.exists = true;
 								leftHand.askedFor = false;
 								leftHand.clean = true;
 							}
-						} else if (request.ip.equals(ipRight)) {
-							System.out.println("Message received from right: " + request.message);
-							if(request.message.equals(Philosopher.CAN_I_HAVE_YOUR_FORK)) {
+							System.out.println("Message found in queue from left: '" + request.getMessage() + "'");
+						} else if (request.getIp().equals(ipRight)) {
+							if(request.getMessage().equals(Request.CAN_I_HAVE_YOUR_FORK)) {
 								if(rightHand.clean) {
+									System.out.print("Ignoring for now: ");
 									requests.put(request);
 									break;
 								} else {
-									System.out.println("Giving my right neighbor the fork...");
-									client.sendMessageToNeighbor(Philosopher.YES, false);
+									System.out.println("Giving my right neighbor the fork, because: ");
+									client.sendMessageToNeighbor(Request.YES, false);
 									rightHand.exists = false;
 								}
-							} else if(request.message.equals(Philosopher.YES)) {
+							} else if(request.getMessage().equals(Request.YES)) {
 								rightHand.exists = true;
 								rightHand.askedFor = false;
 								rightHand.clean = true;
 							}
+							System.out.println("Message found in queue from right: '" + request.getMessage() + "'");
 						} else {
-							System.err.println("Request received from invalid source: " + request.ip);
+							System.err.println("Request received from invalid source: " + request.getIp());
 						}
 						gui.updateGUI();
 					}
@@ -191,12 +179,12 @@ public class Philosopher {
 					
 					if (!leftHand.exists && !leftHand.askedFor) {
 						System.out.println("Asking my left neighbor for his fork...");
-						client.sendMessageToNeighbor(Philosopher.CAN_I_HAVE_YOUR_FORK, true);
+						client.sendMessageToNeighbor(Request.CAN_I_HAVE_YOUR_FORK, true);
 						leftHand.askedFor = true;
 					}
 					if (!rightHand.exists && !rightHand.askedFor) {
 						System.out.println("Asking my right neighbor for his fork...");
-						client.sendMessageToNeighbor(Philosopher.CAN_I_HAVE_YOUR_FORK, false);
+						client.sendMessageToNeighbor(Request.CAN_I_HAVE_YOUR_FORK, false);
 						rightHand.askedFor = true;
 					}
 					
