@@ -48,8 +48,7 @@ public class Client implements Runnable {
 					pwLeft.close();
 					clientLeft.close();
 				} catch (IOException | InterruptedException e) {
-					System.err.print("Left: ");
-					System.err.println(e.getMessage());
+					System.out.println("My left neighbor isn't responding...");
 				}
 			}
 			
@@ -63,8 +62,7 @@ public class Client implements Runnable {
 					pwRight.close();
 					clientRight.close();
 				} catch (IOException | InterruptedException e) {
-					System.err.print("Right: ");
-					System.err.println(e.getMessage());
+					System.out.println("My right neighbor isn't responding...");
 				}
 			}
 		}
