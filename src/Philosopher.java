@@ -24,12 +24,12 @@ public class Philosopher {
 	private static final int PORT = 8080;
 	private static final int NEIGHBORS = 2;
 	
-	private static final long DELAY_BETWEEN_TURNS_MS = 1000;
+	private static final long DELAY_BETWEEN_TURNS_MS = 500;
 	
 	private static final int TURNS_HUNGRY_UNTIL_DEATH = 100;
-	private static final int TURNS_TAKEN_TO_EAT = 5;
+	private static final int TURNS_TAKEN_TO_EAT = 6;
 	
-	private static final float HUNGRY_PROBABILITY = 0.00f;
+	private static final float HUNGRY_PROBABILITY = 0.15f;
 	
 	public static boolean hungerFlag = false;
 	public static boolean satisfactionFlag = false;
