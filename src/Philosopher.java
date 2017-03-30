@@ -34,15 +34,9 @@ public class Philosopher {
 	public static boolean hungerFlag = false;
 	public static boolean satisfactionFlag = false;
 	
-	public static enum State {
-		THINKING,
-		EATING,
-		HUNGRY
-	}
-	
 	public static Fork leftHand;
 	public static Fork rightHand;
-	public static State state;
+	public static String state;
 	
 	/**
 	 * Valid flags:

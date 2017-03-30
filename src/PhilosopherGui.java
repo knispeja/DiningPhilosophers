@@ -68,16 +68,14 @@ public class PhilosopherGui {
 		if(disabled)
 			return;
 		
-		if(Philosopher.state.equals(Philosopher.State.THINKING)){
-			status.setText("I am thinking");
+		status.setText(Philosopher.state);
+		if(Philosopher.state.equals(State.THINKING)){
 			hungryB.setEnabled(true);
 			satisB.setEnabled(false);
-		} else if (Philosopher.state.equals(Philosopher.State.HUNGRY)){
-			status.setText("I am hungry");
+		} else if (Philosopher.state.equals(State.HUNGRY)){
 			hungryB.setEnabled(false);
 			satisB.setEnabled(false);
 		} else {
-			status.setText("I am eating");
 			hungryB.setEnabled(false);
 			satisB.setEnabled(true);
 		}
