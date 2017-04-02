@@ -6,7 +6,7 @@ import java.util.concurrent.BlockingQueue;
 
 public class Client implements Runnable {
 	
-	private static final int QUEUE_SIZE = 2;
+	private static final int QUEUE_SIZE = 3;
 	
 	private BlockingQueue<String> leftMessageQueue;
 	private BlockingQueue<String> rightMessageQueue;
