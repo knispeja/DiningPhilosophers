@@ -23,7 +23,7 @@ public class Philosopher {
 	private static final int QUEUE_SIZE = 4;
 	
 	// Constants dictating the philosopher's behavior
-	private static final long DELAY_BETWEEN_TURNS_MS = 100; // Millisecond delay between turns
+	private static final long DELAY_BETWEEN_TURNS_MS = 1000; // Millisecond delay between turns
 	private static final int TURNS_HUNGRY_UNTIL_DEATH = 100; // Turns the philosopher can be hungry without dying
 	private static final int TURNS_TAKEN_TO_EAT = 4; // Turns the philosopher takes to eat
 	private static final float HUNGRY_PROBABILITY = 0.21f; // Probability the philosopher will become hungry on a given turn
