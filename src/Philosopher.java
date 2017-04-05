@@ -136,6 +136,10 @@ public class Philosopher {
 					sleepingTurns ++;
 					if (sleepingTurns >10){
 						drinkingState = DrinkingState.THINKING;
+						if(beAskedByLeft){
+							beAskedByLeft = false;
+							client.sendMessageToNeighbor(Request.YES_CUP, true);
+						}
 						gui.updateGUI();
 					}
 
@@ -214,11 +218,11 @@ public class Philosopher {
 							if (request.getIp().equals(ipLeft)) {
 								if (request.getMessage().equals(Request.CAN_I_HAVE_YOUR_FORK)) {
 									if (leftHand.clean) {
-										System.out.print("Ignoring for now: ");
+										System.out.println("Ignoring for now: ");
 										requests.put(request);
 										break;
 									} else {
-										System.out.print("Giving my left neighbor the fork, because: ");
+										System.out.println("Giving my left neighbor the fork, because: ");
 										client.sendMessageToNeighbor(Request.YES_FORK, true);
 										leftHand.exists = false;
 									}
@@ -238,7 +242,7 @@ public class Philosopher {
 										
 										//Drinking or thirsty
 									} else {
-										System.out.print("Ignoring cup request for now: ");
+										System.out.println("Ignoring cup request for now: ");
 										requests.put(request);
 										break;
 									}
@@ -253,7 +257,7 @@ public class Philosopher {
 							} else if (request.getIp().equals(ipRight)) {
 								if (request.getMessage().equals(Request.CAN_I_HAVE_YOUR_FORK)) {
 									if (rightHand.clean) {
-										System.out.print("Ignoring for now: ");
+										System.out.println("Ignoring for now: ");
 										requests.put(request);
 										break;
 									} else {
@@ -268,7 +272,18 @@ public class Philosopher {
 								} else if (request.getMessage().equals(Request.CAN_I_HAVE_YOUR_CUP)){
 									System.err.println("Recieved cup confirmation from right");
 								} else if (request.getMessage().equals(Request.YES_CUP)){
-									
+									hasAskedRight = false;
+									if(drinkingState.equals(DrinkingState.THIRSTY)){
+										hasCup = true;
+									} else if(drinkingState.equals(DrinkingState.THINKING)){
+										if(beAskedByLeft){
+											client.sendMessageToNeighbor(Request.YES_CUP, true);
+										} else {
+											System.err.println("Why do I have this cup? I've been drinking too much...");
+										}
+									} else {
+										System.err.println("Recieved duplicate cup");
+									}
 								} else {
 									System.err.println("Reieved unexpected response");
 								}
