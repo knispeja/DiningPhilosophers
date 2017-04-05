@@ -23,7 +23,7 @@ public class Philosopher {
 	private static final int QUEUE_SIZE = 6;
 
 	// Constants dictating the philosopher's behavior
-	private static final long DELAY_BETWEEN_TURNS_MS = 100; // Millisecond delay
+	private static final long DELAY_BETWEEN_TURNS_MS = 500; // Millisecond delay
 															// between turns
 	private static final int TURNS_HUNGRY_UNTIL_DEATH = 100; // Turns the
 																// philosopher
@@ -60,7 +60,7 @@ public class Philosopher {
 		String ipRight = "";
 		
 		// initialize cup status
-		hasCup = false;
+		hasCup = true;
 		hasAskedRight = false;
 		beAskedByLeft = false;
 

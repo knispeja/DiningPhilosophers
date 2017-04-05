@@ -14,6 +14,7 @@ public class PhilosopherGui {
 	private JLabel rightFork;
 	private JButton hungryB;
 	private JButton satisB;
+	private JLabel drinkingStatus;
 	
 	private boolean disabled;
 	
@@ -30,6 +31,8 @@ public class PhilosopherGui {
         JLabel message = new JLabel("I am a Philosopher.");
         status = new JLabel("I am thinking");
         JPanel messagePanel = new JPanel();
+        
+        drinkingStatus = new JLabel("");
         messagePanel.add(message);
         
         JPanel statusPanel = new JPanel();
@@ -42,6 +45,7 @@ public class PhilosopherGui {
         
         statusPanel.add(leftFork);
         statusPanel.add(status);
+        statusPanel.add(drinkingStatus);
         statusPanel.add(rightFork);
         
         hungryB = new JButton("Become Hungry");
@@ -79,6 +83,8 @@ public class PhilosopherGui {
 			hungryB.setEnabled(false);
 			satisB.setEnabled(true);
 		}
+		
+		drinkingStatus.setText(Philosopher.drinkingState);
 		
 		if(Philosopher.leftHand.exists){
 			leftFork.setText("fork");
