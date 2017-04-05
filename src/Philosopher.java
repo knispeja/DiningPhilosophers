@@ -60,7 +60,7 @@ public class Philosopher {
 		String ipRight = "";
 		
 		// initialize cup status
-		hasCup = true;
+		hasCup = false;
 		hasAskedRight = false;
 		beAskedByLeft = false;
 
