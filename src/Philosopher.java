@@ -44,8 +44,8 @@ public class Philosopher {
 
 	public static Fork leftHand;
 	public static Fork rightHand;
-	public static String state;
-	public static String drinkingState;
+	public static HungerState hungerState;
+	public static ThirstState thirstState;
 	
 	// philosophers asks to their right, and pass cups back to left.
 	public static boolean hasCup, hasAskedRight, beAskedByLeft;
@@ -103,8 +103,8 @@ public class Philosopher {
 
 		// Initialize some important values
 		BlockingQueue<Request> requests = new ArrayBlockingQueue<Request>(QUEUE_SIZE);
-		state = State.THINKING;
-		drinkingState = DrinkingState.THINKING;
+		hungerState = HungerState.THINKING;
+		thirstState = ThirstState.THINKING;
 
 		// Open the GUI
 		PhilosopherGui gui = new PhilosopherGui(noGUI);
@@ -130,20 +130,20 @@ public class Philosopher {
 
 				time = System.currentTimeMillis();
 
-				if(drinkingState.equals(DrinkingState.DRINKING) && state.equals(State.EATING)){
+				if(thirstState.equals(ThirstState.DRINKING) && hungerState.equals(HungerState.EATING)){
 					System.err.println("Drinking and Eating at the same time");
 				}
 				
-				if (drinkingState == DrinkingState.SLEEPING) {
+				if (thirstState == ThirstState.SLEEPING) {
 					// increment sleep timer
 					sleepingTurns ++;
 					if (sleepingTurns >10){
-						drinkingState = DrinkingState.THINKING;
+						thirstState = ThirstState.THINKING;
 						if(beAskedByLeft){
 							beAskedByLeft = false;
 							client.sendMessageToNeighbor(Request.YES_CUP, true);
 						}
-						gui.updateGUI();
+						gui.updateThirstState();
 					}
 
 				} else {
@@ -156,28 +156,28 @@ public class Philosopher {
 					// if sleep: ZZZ~~~
 					
 					
-					if (drinkingState == DrinkingState.THINKING){
+					if (thirstState == ThirstState.THINKING){
 						if (Math.random() < 0.02){
-							drinkingState = DrinkingState.THIRSTY;
-							gui.updateGUI();
+							thirstState = ThirstState.THIRSTY;
+							gui.updateThirstState();
 							// send out message to RIGHT, asking for cups
 							if (!hasCup && !hasAskedRight){
 								client.sendMessageToNeighbor(Request.CAN_I_HAVE_YOUR_CUP, false);
 								hasAskedRight = true;
 							}
 						}
-					}else if (drinkingState == DrinkingState.THIRSTY){
+					}else if (thirstState == ThirstState.THIRSTY){
 						if (!leftHand.exists && ! rightHand.exists){
-							if (hasCup && state.equals(State.THINKING)) {
-								drinkingState = DrinkingState.DRINKING;
-								gui.updateGUI();
+							if (hasCup && hungerState.equals(HungerState.THINKING)) {
+								thirstState = ThirstState.DRINKING;
+								gui.updateThirstState();
 							}
 						}
 						
-					}else if (drinkingState == DrinkingState.DRINKING){
+					}else if (thirstState == ThirstState.DRINKING){
 						drinkingTurns ++;
 						if(drinkingTurns > drinkingTurnThreshold){
-							drinkingState = DrinkingState.SLEEPING;
+							thirstState = ThirstState.SLEEPING;
 							sleepingTurns = 0;
 						}
 						
@@ -190,26 +190,25 @@ public class Philosopher {
 
 					// beyond this point, is our lab1-version code
 
-					if (state.equals(State.THINKING)) {
-						if (!drinkingState.equals(DrinkingState.DRINKING) 
+					if (hungerState.equals(HungerState.THINKING)) {
+						if (!thirstState.equals(ThirstState.DRINKING) 
 								&& (Math.random() < HUNGRY_PROBABILITY || hungerFlag)) {
-							state = State.HUNGRY;
-							gui.updateGUI();
+							hungerState = HungerState.HUNGRY;
 							hungryTurns = 0;
 							hungerFlag = false;
-							gui.updateGUI();
+							gui.updateHungerState();
 						}
 					}
 
-					if (state.equals(State.EATING)) {
+					if (hungerState.equals(HungerState.EATING)) {
 						if (eatingTurns > Philosopher.TURNS_TAKEN_TO_EAT || satisfactionFlag) {
 							System.out.println("Done eating. That was delicious!");
 							eatingTurns = 0;
 							leftHand.clean = false;
 							rightHand.clean = false;
-							state = State.THINKING;
+							hungerState = HungerState.THINKING;
 							satisfactionFlag = false;
-							gui.updateGUI();
+							gui.updateHungerState();
 						} else {
 							eatingTurns++;
 						}
@@ -228,13 +227,14 @@ public class Philosopher {
 										System.out.println("Giving my left neighbor the fork, because: ");
 										client.sendMessageToNeighbor(Request.YES_FORK, true);
 										leftHand.exists = false;
+										gui.updateForks();
 									}
 								} else if (request.getMessage().equals(Request.YES_FORK)) {
 									leftHand.exists = true;
 									leftHand.askedFor = false;
 									leftHand.clean = true;
 								} else if (request.getMessage().equals(Request.CAN_I_HAVE_YOUR_CUP)){
-									if(drinkingState.equals(DrinkingState.THINKING)){
+									if(thirstState.equals(ThirstState.THINKING)){
 										if(hasCup){
 											client.sendMessageToNeighbor(Request.YES_CUP, true);
 										} else if(!hasAskedRight){
@@ -276,9 +276,9 @@ public class Philosopher {
 									System.err.println("Recieved cup confirmation from right");
 								} else if (request.getMessage().equals(Request.YES_CUP)){
 									hasAskedRight = false;
-									if(drinkingState.equals(DrinkingState.THIRSTY)){
+									if(thirstState.equals(ThirstState.THIRSTY)){
 										hasCup = true;
-									} else if(drinkingState.equals(DrinkingState.THINKING)){
+									} else if(thirstState.equals(ThirstState.THINKING)){
 										if(beAskedByLeft){
 											client.sendMessageToNeighbor(Request.YES_CUP, true);
 										} else {
@@ -294,11 +294,11 @@ public class Philosopher {
 							} else {
 								System.err.println("Request received from invalid source: " + request.getIp());
 							}
-							gui.updateGUI();
+							gui.update();
 						}
 					}
 
-					if (state.equals(State.HUNGRY)) {
+					if (hungerState.equals(HungerState.HUNGRY)) {
 
 						if (hungryTurns++ == Philosopher.TURNS_HUNGRY_UNTIL_DEATH) {
 							System.out.println("R.I.P. I'm a ghost");
@@ -317,8 +317,8 @@ public class Philosopher {
 
 						if (leftHand.exists && rightHand.exists) {
 							System.out.println("Beginning to eat!");
-							state = State.EATING;
-							gui.updateGUI();
+							hungerState = HungerState.EATING;
+							gui.updateHungerState();
 						}
 					}
 				}

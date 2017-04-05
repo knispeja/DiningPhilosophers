@@ -63,29 +63,43 @@ public class PhilosopherGui {
         guiFrame.add(statusPanel, BorderLayout.CENTER);
         
         guiFrame.setVisible(true);
-        updateGUI();
+        update();
 	}
 	
-	
-	public void updateGUI(){
-		
+	public void update(){
 		if(disabled)
 			return;
 		
-		status.setText(Philosopher.state);
-		if(Philosopher.state.equals(State.THINKING)){
+		updateHungerState();
+		updateThirstState();
+		updateForks();
+	}
+	
+	public void updateHungerState() {
+		if(disabled)
+			return;
+		
+		status.setText(Philosopher.hungerState.toString());
+		if(Philosopher.hungerState.equals(HungerState.THINKING)){
 			hungryB.setEnabled(true);
 			satisB.setEnabled(false);
-		} else if (Philosopher.state.equals(State.HUNGRY)){
+		} else if (Philosopher.hungerState.equals(HungerState.HUNGRY)){
 			hungryB.setEnabled(false);
 			satisB.setEnabled(false);
 		} else {
 			hungryB.setEnabled(false);
 			satisB.setEnabled(true);
 		}
+	}
+	
+	public void updateThirstState() {
+		if(disabled)
+			return;
 		
-		drinkingStatus.setText(Philosopher.drinkingState);
-		
+		drinkingStatus.setText(Philosopher.thirstState.toString());
+	}
+	
+	public void updateForks() {
 		if(Philosopher.leftHand.exists){
 			leftFork.setText("fork");
 		} else {
