@@ -120,18 +120,22 @@ public class Philosopher {
 		int eatingTurns = 0;
 		int drinkingTurns = 0;
 		int sleepingTurns = 0;
+		int drinkingTurnThreshold = 4;
 		while (true) {
 
 			if (System.currentTimeMillis() - time > DELAY_BETWEEN_TURNS_MS) {
 
 				time = System.currentTimeMillis();
 
+				if(drinkingState.equals(DrinkingState.DRINKING) && state.equals(State.EATING)){
+					System.err.println("Drinking and Eating at the same time");
+				}
+				
 				if (drinkingState == DrinkingState.SLEEPING) {
 					// increment sleep timer
 					sleepingTurns ++;
 					if (sleepingTurns >10){
 						drinkingState = DrinkingState.THINKING;
-						sleepingTurns = 0;
 						gui.updateGUI();
 					}
 
@@ -150,9 +154,9 @@ public class Philosopher {
 							drinkingState = DrinkingState.THIRSTY;
 							gui.updateGUI();
 							// send out message to RIGHT, asking for cups
-							if (!hasAskedRight){
-								client.sendMessageToNeighbor(Request.AN_I_HAVE_YOUR_CUP, false);
-								hasAskedRight =true;
+							if (!hasCup && !hasAskedRight){
+								client.sendMessageToNeighbor(Request.CAN_I_HAVE_YOUR_CUP, false);
+								hasAskedRight = true;
 							}
 						}
 					}else if (drinkingState == DrinkingState.THIRSTY){
@@ -165,6 +169,10 @@ public class Philosopher {
 						
 					}else if (drinkingState == DrinkingState.DRINKING){
 						drinkingTurns ++;
+						if(drinkingTurns > drinkingTurnThreshold){
+							drinkingState = DrinkingState.SLEEPING;
+							sleepingTurns = 0;
+						}
 						
 					}else{
 						System.err.println("drinking state messed up");
@@ -172,17 +180,12 @@ public class Philosopher {
 					}
 					
 					
-					
-					
-					
-					
-					
-					
 
 					// beyond this point, is our lab1-version code
 
 					if (state.equals(State.THINKING)) {
-						if (Math.random() < HUNGRY_PROBABILITY || hungerFlag) {
+						if (!drinkingState.equals(DrinkingState.DRINKING) 
+								&& (Math.random() < HUNGRY_PROBABILITY || hungerFlag)) {
 							state = State.HUNGRY;
 							gui.updateGUI();
 							hungryTurns = 0;
@@ -207,6 +210,7 @@ public class Philosopher {
 						// Handle requests
 						Request request;
 						while ((request = requests.poll()) != null) {
+							
 							if (request.getIp().equals(ipLeft)) {
 								if (request.getMessage().equals(Request.CAN_I_HAVE_YOUR_FORK)) {
 									if (leftHand.clean) {
@@ -222,8 +226,30 @@ public class Philosopher {
 									leftHand.exists = true;
 									leftHand.askedFor = false;
 									leftHand.clean = true;
+								} else if (request.getMessage().equals(Request.CAN_I_HAVE_YOUR_CUP)){
+									if(drinkingState.equals(DrinkingState.THINKING)){
+										if(hasCup){
+											client.sendMessageToNeighbor(Request.YES_CUP, true);
+										} else if(!hasAskedRight){
+											client.sendMessageToNeighbor(Request.CAN_I_HAVE_YOUR_CUP, false);
+											hasAskedRight = true;
+											beAskedByLeft = true;
+										} // else: hasaskedright = true, so do nothing. 
+										
+										//Drinking or thirsty
+									} else {
+										System.out.print("Ignoring cup request for now: ");
+										requests.put(request);
+										break;
+									}
+								} else if (request.getMessage().equals(Request.YES_CUP)){
+									System.err.println("Recieved cup request from left");
+								} else {
+									System.err.println("Reieved unexpected response");
 								}
+								
 								System.out.println("Message found in queue from left: '" + request.getMessage() + "'");
+							
 							} else if (request.getIp().equals(ipRight)) {
 								if (request.getMessage().equals(Request.CAN_I_HAVE_YOUR_FORK)) {
 									if (rightHand.clean) {
@@ -239,6 +265,12 @@ public class Philosopher {
 									rightHand.exists = true;
 									rightHand.askedFor = false;
 									rightHand.clean = true;
+								} else if (request.getMessage().equals(Request.CAN_I_HAVE_YOUR_CUP)){
+									System.err.println("Recieved cup confirmation from right");
+								} else if (request.getMessage().equals(Request.YES_CUP)){
+									
+								} else {
+									System.err.println("Reieved unexpected response");
 								}
 								System.out.println("Message found in queue from right: '" + request.getMessage() + "'");
 							} else {
