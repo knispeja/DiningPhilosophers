@@ -13,6 +13,7 @@ public class Philosopher {
 	private static final String RIGHT_PHILOSOPHER_IP = "-r";
 	private static final String HAS_LEFT_FORK = "-hasleftfork";
 	private static final String HAS_RIGHT_FORK = "-hasrightfork";
+	private static final String HAS_CUP = "-hascup";
 	private static final String NO_GUI = "-nogui";
 	private static final String HELP = "-help";
 
@@ -79,6 +80,8 @@ public class Philosopher {
 				rightHand.exists = true;
 			} else if (arg.equals(NO_GUI)) {
 				noGUI = true;
+			} else if (arg.equals(HAS_CUP)) {
+				hasCup = true;
 			} else if (arg.equals(HELP)) {
 				System.out.println("Valid command line arguments (given in any order): ");
 				System.out.println("\t-l [left_philosopher_ip]");
