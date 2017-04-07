@@ -1,5 +1,6 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.GridLayout;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -12,6 +13,7 @@ public class PhilosopherGui {
 	private JLabel status;
 	private JLabel leftFork; 
 	private JLabel rightFork;
+	private JLabel cup;
 	private JButton hungryB;
 	private JButton satisB;
 	private JLabel drinkingStatus;
@@ -32,10 +34,9 @@ public class PhilosopherGui {
         status = new JLabel("I am thinking");
         JPanel messagePanel = new JPanel();
         
-        drinkingStatus = new JLabel("");
         messagePanel.add(message);
         
-        JPanel statusPanel = new JPanel();
+        JPanel foodStatusPanel = new JPanel();
         leftFork = new JLabel("fork");
         rightFork = new JLabel("");
         leftFork.setBorder(BorderFactory.createLineBorder(Color.black));
@@ -43,14 +44,25 @@ public class PhilosopherGui {
         leftFork.setSize(30,20);
         rightFork.setSize(30,20);
         
-        statusPanel.add(leftFork);
-        statusPanel.add(status);
-        statusPanel.add(drinkingStatus);
-        statusPanel.add(rightFork);
+
+        
+        foodStatusPanel.add(leftFork);
+        foodStatusPanel.add(status);
+
+        foodStatusPanel.add(rightFork);
+        
+        drinkingStatus = new JLabel("");
+        JPanel drinkStatusPanel = new JPanel();
+        cup = new JLabel("");
+        cup.setBorder(BorderFactory.createLineBorder(Color.black));
+        cup.setSize(20,20);
+        drinkStatusPanel.add(cup);
+        drinkStatusPanel.add(drinkingStatus);
+        
+        
         
         hungryB = new JButton("Become Hungry");
         satisB = new JButton("Be Satisfied");
-        
         hungryB.addActionListener(a -> {Philosopher.hungerFlag = true;});
         satisB.addActionListener(a -> {Philosopher.satisfactionFlag = true;});
         
@@ -58,9 +70,17 @@ public class PhilosopherGui {
         buttonPanel.add(hungryB);
         buttonPanel.add(satisB);
         
+        JPanel infoPanel = new JPanel();
+        
+
+        infoPanel.setLayout(new GridLayout(2,1));
+        infoPanel.add(foodStatusPanel);
+        infoPanel.add(drinkStatusPanel);
+        
         guiFrame.add(messagePanel, BorderLayout.NORTH);
+        
         guiFrame.add(buttonPanel, BorderLayout.SOUTH);
-        guiFrame.add(statusPanel, BorderLayout.CENTER);
+        guiFrame.add(infoPanel, BorderLayout.CENTER);
         
         guiFrame.setVisible(true);
         update();
@@ -73,8 +93,21 @@ public class PhilosopherGui {
 		updateHungerState();
 		updateThirstState();
 		updateForks();
+		updateCup();
 	}
 	
+	private void updateCup() {
+		// TODO Auto-generated method stub
+		if(disabled)
+			return;
+		if(Philosopher.hasCup){
+			cup.setText("cup");
+		} else {
+			cup.setText("  ");
+		}
+		
+	}
+
 	public void updateHungerState() {
 		if(disabled)
 			return;
