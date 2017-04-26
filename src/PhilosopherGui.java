@@ -133,6 +133,9 @@ public class PhilosopherGui {
 	}
 	
 	public void updateForks() {
+		if(disabled)
+			return;
+		
 		if(Philosopher.leftHand.exists){
 			leftFork.setText("fork");
 		} else {
