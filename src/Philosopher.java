@@ -237,6 +237,7 @@ public class Philosopher {
 									if(thirstState.equals(ThirstState.THINKING)){
 										if(hasCup){
 											client.sendMessageToNeighbor(Request.YES_CUP, true);
+											hasCup = false;
 										} else if(!hasAskedRight){
 											client.sendMessageToNeighbor(Request.CAN_I_HAVE_YOUR_CUP, false);
 											hasAskedRight = true;
