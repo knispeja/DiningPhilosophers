@@ -52,7 +52,7 @@ public class Philosopher {
 	
 
 	public static void main(String[] args) throws InterruptedException {
-
+		
 		// Initialize these variables using args if available
 		leftHand = new Fork();
 		rightHand = new Fork();
