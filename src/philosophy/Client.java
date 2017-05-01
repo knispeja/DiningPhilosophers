@@ -1,10 +1,11 @@
+package philosophy;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Socket;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
-public class Client implements Runnable {
+public class Client implements ClientInterface, Runnable {
 	
 	private static final int QUEUE_SIZE = 3;
 	
@@ -27,6 +28,10 @@ public class Client implements Runnable {
 		this.rightMessageQueue = new ArrayBlockingQueue<String>(QUEUE_SIZE);
 	}
 	
+	/* (non-Javadoc)
+	 * @see ClientInterface#sendMessageToNeighbor(java.lang.String, boolean)
+	 */
+	@Override
 	public void sendMessageToNeighbor(String message, boolean left) throws InterruptedException {
 		if(left)
 			this.leftMessageQueue.put(message);
@@ -34,6 +39,9 @@ public class Client implements Runnable {
 			this.rightMessageQueue.put(message);
 	}
 	
+	/* (non-Javadoc)
+	 * @see ClientInterface#run()
+	 */
 	@Override
 	public void run() {
 		while(true) {

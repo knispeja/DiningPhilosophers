@@ -1,3 +1,4 @@
+package philosophy;
 
 public enum HungerState {
 	

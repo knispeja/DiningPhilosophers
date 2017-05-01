@@ -1,5 +1,11 @@
+package philosophy;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+
+import org.apache.zookeeper.KeeperException;
+
+import zookeeper.ZClient;
+import zookeeper.ZServer;
 
 /**
  * @author Peter Larson
@@ -9,8 +15,10 @@ import java.util.concurrent.BlockingQueue;
 public class Philosopher {
 
 	// Command line flags
-	private static final String LEFT_PHILOSOPHER_IP = "-l";
-	private static final String RIGHT_PHILOSOPHER_IP = "-r";
+	private static final String LEFT_PHILOSOPHER_ID = "-l";
+	private static final String RIGHT_PHILOSOPHER_ID = "-r";
+	private static final String THIS_PHILOSOPHER_ID = "-i";
+	private static final String ZOOKEEPER = "-z";
 	private static final String HAS_LEFT_FORK = "-hasleftfork";
 	private static final String HAS_RIGHT_FORK = "-hasrightfork";
 	private static final String HAS_CUP = "-hascup";
@@ -51,14 +59,16 @@ public class Philosopher {
 	public static boolean hasCup, hasAskedRight, beAskedByLeft;
 	
 
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) throws InterruptedException, KeeperException {
 		
 		// Initialize these variables using args if available
 		leftHand = new Fork();
 		rightHand = new Fork();
 
-		String ipLeft = "";
-		String ipRight = "";
+		int idLeft = -1;
+		int idRight = -1;
+		int thisID= -1;
+		String zIP = "";
 		
 		// initialize cup status
 		hasCup = false;
@@ -70,10 +80,14 @@ public class Philosopher {
 		// Parse command line arguments
 		for (int i = 0; i < args.length; i++) {
 			String arg = args[i].toLowerCase();
-			if (arg.equals(LEFT_PHILOSOPHER_IP)) {
-				ipLeft = args[++i];
-			} else if (arg.equals(RIGHT_PHILOSOPHER_IP)) {
-				ipRight = args[++i];
+			if (arg.equals(LEFT_PHILOSOPHER_ID)) {
+				idLeft = Integer.parseInt(args[++i]);
+			} else if (arg.equals(RIGHT_PHILOSOPHER_ID)) {
+				idRight = Integer.parseInt(args[++i]);
+			} else if (arg.equals(THIS_PHILOSOPHER_ID)) {
+				thisID = Integer.parseInt(args[++i]);
+			} else if (arg.equals(ZOOKEEPER)) {
+				zIP = args[++i];
 			} else if (arg.equals(HAS_LEFT_FORK)) {
 				leftHand.exists = true;
 			} else if (arg.equals(HAS_RIGHT_FORK)) {
@@ -84,8 +98,9 @@ public class Philosopher {
 				hasCup = true;
 			} else if (arg.equals(HELP)) {
 				System.out.println("Valid command line arguments (given in any order): ");
-				System.out.println("\t-l [left_philosopher_ip]");
-				System.out.println("\t-r [right_philosopher_ip]");
+				System.out.println("\t-l [left_philosopher_id]");
+				System.out.println("\t-r [right_philosopher_id]");
+				System.out.println("\t-i [this_philosopher_id]");
 				System.out.println("\t-hasLeftFork: philosopher starts with the left fork");
 				System.out.println("\t-hasRightFork: philosopher starts with the right fork");
 				System.out.println("\t-noGUI: the GUI will not open");
@@ -96,8 +111,8 @@ public class Philosopher {
 		}
 
 		// Input validation
-		if (ipLeft.isEmpty() || ipRight.isEmpty()) {
-			System.err.println("Please provide IPs for both the left and right neighbors via -l [ip] and -r [ip].");
+		if (idLeft == -1 || idRight == -1 || thisID == -1 || zIP.equals("")) {
+			System.err.println("Missing Parameters. Please provide: -z [zookeeper ip] -i [this_id] -l [left_id] and -r [right_id].");
 			return;
 		}
 
@@ -110,11 +125,11 @@ public class Philosopher {
 		PhilosopherGui gui = new PhilosopherGui(noGUI);
 
 		// Create new instances of Client and Server
-		Client client = new Client(ipLeft, PORT, ipRight, PORT);
-		Server server = new Server(PORT, requests);
+		ZClient client = new ZClient(idLeft, idRight, thisID, zIP);
+		ZServer server = new ZServer(requests, zIP, idLeft, idRight, thisID);
 
 		// Create and run Client and Server threads
-		new Thread(client).start();
+		//new Thread(client).start();
 		new Thread(server).start();
 
 		// Loop for the duration of the program...
@@ -218,7 +233,7 @@ public class Philosopher {
 						Request request;
 						while ((request = requests.poll()) != null) {
 							
-							if (request.getIp().equals(ipLeft)) {
+							if (request.getId() == idLeft) {
 								if (request.getMessage().equals(Request.CAN_I_HAVE_YOUR_FORK)) {
 									if (leftHand.clean) {
 										System.out.println("Ignoring for now: ");
@@ -259,7 +274,7 @@ public class Philosopher {
 								
 								System.out.println("Message found in queue from left: '" + request.getMessage() + "'");
 							
-							} else if (request.getIp().equals(ipRight)) {
+							} else if (request.getId() == idRight) {
 								if (request.getMessage().equals(Request.CAN_I_HAVE_YOUR_FORK)) {
 									if (rightHand.clean) {
 										System.out.println("Ignoring for now: ");
@@ -295,7 +310,7 @@ public class Philosopher {
 								}
 								System.out.println("Message found in queue from right: '" + request.getMessage() + "'");
 							} else {
-								System.err.println("Request received from invalid source: " + request.getIp());
+								System.err.println("Request received from invalid source: " + request.getId());
 							}
 							gui.update();
 						}

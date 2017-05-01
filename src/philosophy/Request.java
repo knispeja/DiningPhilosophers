@@ -1,3 +1,4 @@
+package philosophy;
 
 public class Request {
 	
@@ -7,18 +8,18 @@ public class Request {
 	public static final String YES_CUP = "Fine, take it, you drunkard.";
 	
 	private String message;
-	private String ip;
+	private int id;
 	
-	public Request(String message, String ip) {
+	public Request(String message, int ip) {
 		this.message = message;
-		this.ip = ip;
+		this.id = ip;
 	}
 	
 	public String getMessage() {
 		return this.message;
 	}
 	
-	public String getIp() {
-		return this.ip;
+	public int getId() {
+		return this.id;
 	}
 }

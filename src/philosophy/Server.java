@@ -1,3 +1,4 @@
+package philosophy;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -34,7 +35,7 @@ class Server implements Runnable{
 				while(true) {
 					if(br.ready()) {
 						String message = br.readLine();
-						requests.add(new Request(message, client.getInetAddress().getHostAddress()));
+						//requests.add(new Request(message, client.getInetAddress().getHostAddress()));
 						break;
 					}
 				}

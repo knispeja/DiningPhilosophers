@@ -1,3 +1,4 @@
+package philosophy;
 
 public class Fork {
 	public boolean clean;
