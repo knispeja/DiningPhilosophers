@@ -24,7 +24,7 @@ public class Philosopher {
 	private static final int QUEUE_SIZE = 6;
 
 	// Constants dictating the philosopher's behavior
-	private static final long DELAY_BETWEEN_TURNS_MS = 500; // Millisecond delay
+	private static final long DELAY_BETWEEN_TURNS_MS = 100; // Millisecond delay
 															// between turns
 	private static final int TURNS_HUNGRY_UNTIL_DEATH = 100; // Turns the
 																// philosopher
@@ -52,7 +52,7 @@ public class Philosopher {
 	
 
 	public static void main(String[] args) throws InterruptedException {
-
+		
 		// Initialize these variables using args if available
 		leftHand = new Fork();
 		rightHand = new Fork();
@@ -142,6 +142,7 @@ public class Philosopher {
 						if(beAskedByLeft){
 							beAskedByLeft = false;
 							client.sendMessageToNeighbor(Request.YES_CUP, true);
+							hasCup = false;
 						}
 						gui.updateThirstState();
 					}
@@ -282,6 +283,7 @@ public class Philosopher {
 									} else if(thirstState.equals(ThirstState.THINKING)){
 										if(beAskedByLeft){
 											client.sendMessageToNeighbor(Request.YES_CUP, true);
+											hasCup = false;
 										} else {
 											System.err.println("Why do I have this cup? I've been drinking too much...");
 										}
