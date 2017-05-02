@@ -160,6 +160,7 @@ public class Philosopher {
 					if (thirstState == ThirstState.THINKING){
 						if (Math.random() < 0.02){
 							thirstState = ThirstState.THIRSTY;
+							System.out.println("Philosopher has become thirsty");
 							gui.updateThirstState();
 							// send out message to RIGHT, asking for cups
 							if (!hasCup && !hasAskedRight){
@@ -171,6 +172,7 @@ public class Philosopher {
 						if (!leftHand.exists && ! rightHand.exists){
 							if (hasCup && hungerState.equals(HungerState.THINKING)) {
 								thirstState = ThirstState.DRINKING;
+								System.out.println("Philosopher has started drinking");
 								gui.updateThirstState();
 							}
 						}
@@ -179,6 +181,7 @@ public class Philosopher {
 						drinkingTurns ++;
 						if(drinkingTurns > drinkingTurnThreshold){
 							thirstState = ThirstState.SLEEPING;
+							System.out.println("Philosopher has fallen asleep");
 							sleepingTurns = 0;
 						}
 						
@@ -203,7 +206,7 @@ public class Philosopher {
 
 					if (hungerState.equals(HungerState.EATING)) {
 						if (eatingTurns > Philosopher.TURNS_TAKEN_TO_EAT || satisfactionFlag) {
-							System.out.println("Done eating. That was delicious!");
+							System.out.println("Finished Eating");
 							eatingTurns = 0;
 							leftHand.clean = false;
 							rightHand.clean = false;
@@ -221,11 +224,11 @@ public class Philosopher {
 							if (request.getIp().equals(ipLeft)) {
 								if (request.getMessage().equals(Request.CAN_I_HAVE_YOUR_FORK)) {
 									if (leftHand.clean) {
-										System.out.println("Ignoring for now: ");
+										//System.out.println("Ignoring for now: ");
 										requests.put(request);
 										break;
 									} else {
-										System.out.println("Giving my left neighbor the fork, because: ");
+										//System.out.println("Giving my left neighbor the fork, because: ");
 										client.sendMessageToNeighbor(Request.YES_FORK, true);
 										leftHand.exists = false;
 										gui.updateForks();
@@ -247,7 +250,7 @@ public class Philosopher {
 										
 										//Drinking or thirsty
 									} else {
-										System.out.println("Ignoring cup request for now: ");
+										//System.out.println("Ignoring cup request for now: ");
 										requests.put(request);
 										break;
 									}
@@ -257,16 +260,16 @@ public class Philosopher {
 									System.err.println("Reieved unexpected response");
 								}
 								
-								System.out.println("Message found in queue from left: '" + request.getMessage() + "'");
+								//System.out.println("Message found in queue from left: '" + request.getMessage() + "'");
 							
 							} else if (request.getIp().equals(ipRight)) {
 								if (request.getMessage().equals(Request.CAN_I_HAVE_YOUR_FORK)) {
 									if (rightHand.clean) {
-										System.out.println("Ignoring for now: ");
+										//System.out.println("Ignoring for now: ");
 										requests.put(request);
 										break;
 									} else {
-										System.out.println("Giving my right neighbor the fork, because: ");
+										//System.out.println("Giving my right neighbor the fork, because: ");
 										client.sendMessageToNeighbor(Request.YES_FORK, false);
 										rightHand.exists = false;
 									}
@@ -293,7 +296,7 @@ public class Philosopher {
 								} else {
 									System.err.println("Reieved unexpected response");
 								}
-								System.out.println("Message found in queue from right: '" + request.getMessage() + "'");
+								//System.out.println("Message found in queue from right: '" + request.getMessage() + "'");
 							} else {
 								System.err.println("Request received from invalid source: " + request.getIp());
 							}
@@ -304,16 +307,16 @@ public class Philosopher {
 					if (hungerState.equals(HungerState.HUNGRY)) {
 
 						if (hungryTurns++ == Philosopher.TURNS_HUNGRY_UNTIL_DEATH) {
-							System.out.println("R.I.P. I'm a ghost");
+							System.out.println("This philosopher has died of starvation.");
 						}
 
 						if (!leftHand.exists && !leftHand.askedFor) {
-							System.out.println("Asking my left neighbor for his fork...");
+							//System.out.println("Asking my left neighbor for his fork...");
 							client.sendMessageToNeighbor(Request.CAN_I_HAVE_YOUR_FORK, true);
 							leftHand.askedFor = true;
 						}
 						if (!rightHand.exists && !rightHand.askedFor) {
-							System.out.println("Asking my right neighbor for his fork...");
+							//System.out.println("Asking my right neighbor for his fork...");
 							client.sendMessageToNeighbor(Request.CAN_I_HAVE_YOUR_FORK, false);
 							rightHand.askedFor = true;
 						}
