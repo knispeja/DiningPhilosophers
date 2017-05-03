@@ -171,7 +171,7 @@ public class Philosopher {
 						wakenFlag = false;
 						sleepFlag = false;
 						thirstState = ThirstState.THINKING;
-						if(beAskedByLeft){
+						if(beAskedByLeft && hasCup){
 							beAskedByLeft = false;
 							client.sendMessageToNeighbor(Request.YES_CUP, true);
 							hasCup = false;
