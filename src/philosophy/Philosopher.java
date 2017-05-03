@@ -352,14 +352,16 @@ public class Philosopher {
 									} else if (playState.equals(PlayState.WANT_PLAY_RIGHT)){
 										//Ignoring for now
 										requests.put(request);
+										break;
 									} else if (playState.equals(PlayState.INACTIVE)){
-										if(!rightHand.exists && thirstState.equals(ThirstState.THINKING) && hungerState.equals(HungerState.THINKING)){
+										if(!rightHand.exists && !thirstState.equals(ThirstState.DRINKING) && hungerState.equals(HungerState.THINKING)){
 											client.sendMessageToNeighbor(Request.CAN_WE_PLAY, true);
 											playState = PlayState.PLAY_LEFT;
 											gui.updatePlayState();
 										} else {
 											//Not Ready to Play, Ignoring for now. 
 											requests.put(request);
+											break;
 										}
 									}
 								}else if (request.getMessage().equals(Request.STOP_PLAY)){
@@ -404,6 +406,7 @@ public class Philosopher {
 											hasCup = false;
 										} else {
 											System.err.println("Why do I have this cup? I've been drinking too much...");
+											hasCup = true;
 										}
 									} else {
 										System.err.println("Recieved duplicate cup");
@@ -415,14 +418,16 @@ public class Philosopher {
 									} else if (playState.equals(PlayState.WANT_PLAY_LEFT)){
 										//Ignoring for now
 										requests.put(request);
+										break;
 									} else if (playState.equals(PlayState.INACTIVE)){
-										if(!leftHand.exists && thirstState.equals(ThirstState.THINKING) && hungerState.equals(HungerState.THINKING)){
+										if(!leftHand.exists && !thirstState.equals(ThirstState.DRINKING) && hungerState.equals(HungerState.THINKING)){
 											client.sendMessageToNeighbor(Request.CAN_WE_PLAY, false);
 											playState = PlayState.PLAY_RIGHT;
 											gui.updatePlayState();
 										} else {
 											//Not Ready to Play, Ignoring for now. 
 											requests.put(request);
+											break;
 										}
 									}
 								}else if (request.getMessage().equals(Request.STOP_PLAY)){
