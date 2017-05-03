@@ -25,9 +25,6 @@ public class Philosopher {
 	private static final String NO_GUI = "-nogui";
 	private static final String HELP = "-help";
 
-	// Connectivity
-	private static final int PORT = 8080;
-
 	// Queue size, should be [# of possible requests]*[# of neighbors] = 2*2 = 4
 	private static final int QUEUE_SIZE = 6;
 
@@ -40,6 +37,7 @@ public class Philosopher {
 																// without dying
 	private static final int TURNS_TAKEN_TO_EAT = 4; // Turns the philosopher
 														// takes to eat
+	private static final int TURNS_TAKEN_TO_SLEEP = 10;
 	private static final float HUNGRY_PROBABILITY = 0.21f; // Probability the
 															// philosopher will
 															// become hungry on
@@ -48,7 +46,13 @@ public class Philosopher {
 	// Publicly available variables and flags, TODO move main into its own class
 	// to avoid these
 	public static boolean hungerFlag = false;
+	public static boolean thirstFlag = false;
 	public static boolean satisfactionFlag = false;
+	public static boolean randomMode = true;
+	public static boolean sleepFlag = false;
+	public static boolean wakenFlag = false;
+	public static boolean playLeftFlag = false;
+	public static boolean playRightFlag = false;
 
 	public static Fork leftHand;
 	public static Fork rightHand;
@@ -145,14 +149,24 @@ public class Philosopher {
 
 				time = System.currentTimeMillis();
 
+				if (sleepFlag) {
+					if(thirstState != ThirstState.SLEEPING) {
+						thirstState = ThirstState.SLEEPING;
+						gui.updateThirstState();
+					}
+					sleepingTurns = 0;
+				}
+				
 				if(thirstState.equals(ThirstState.DRINKING) && hungerState.equals(HungerState.EATING)){
 					System.err.println("Drinking and Eating at the same time");
 				}
 				
 				if (thirstState == ThirstState.SLEEPING) {
 					// increment sleep timer
-					sleepingTurns ++;
-					if (sleepingTurns >10){
+					sleepingTurns++;
+					if (sleepingTurns > TURNS_TAKEN_TO_SLEEP || wakenFlag){
+						wakenFlag = false;
+						sleepFlag = false;
 						thirstState = ThirstState.THINKING;
 						if(beAskedByLeft){
 							beAskedByLeft = false;
@@ -173,7 +187,8 @@ public class Philosopher {
 					
 					
 					if (thirstState == ThirstState.THINKING){
-						if (Math.random() < 0.02){
+						if ((randomMode && Math.random() < 0.02) || thirstFlag){
+							thirstFlag = false;
 							thirstState = ThirstState.THIRSTY;
 							System.out.println("Philosopher has become thirsty");
 							gui.updateThirstState();
@@ -193,8 +208,9 @@ public class Philosopher {
 						}
 						
 					}else if (thirstState == ThirstState.DRINKING){
-						drinkingTurns ++;
-						if(drinkingTurns > drinkingTurnThreshold){
+						drinkingTurns++;
+						if(drinkingTurns > drinkingTurnThreshold || satisfactionFlag){
+							satisfactionFlag = false;
 							thirstState = ThirstState.SLEEPING;
 							System.out.println("Philosopher has fallen asleep");
 							sleepingTurns = 0;
@@ -211,7 +227,7 @@ public class Philosopher {
 
 					if (hungerState.equals(HungerState.THINKING)) {
 						if (!thirstState.equals(ThirstState.DRINKING) 
-								&& (Math.random() < HUNGRY_PROBABILITY || hungerFlag)) {
+								&& ((randomMode && Math.random() < HUNGRY_PROBABILITY) || hungerFlag)) {
 							hungerState = HungerState.HUNGRY;
 							hungryTurns = 0;
 							hungerFlag = false;
@@ -346,7 +362,6 @@ public class Philosopher {
 			}
 
 			
-
 		}
 	}
 }
