@@ -50,10 +50,15 @@ public class Philosopher {
 	public static boolean hungerFlag = false;
 	public static boolean satisfactionFlag = false;
 
+	
+	public static boolean playLeftFlag = false;
+	public static boolean playRightFlag = false;
+	
 	public static Fork leftHand;
 	public static Fork rightHand;
 	public static HungerState hungerState;
 	public static ThirstState thirstState;
+	public static PlayState playState;
 	
 	// philosophers asks to their right, and pass cups back to left.
 	public static boolean hasCup, hasAskedRight, beAskedByLeft;
@@ -120,6 +125,7 @@ public class Philosopher {
 		BlockingQueue<Request> requests = new ArrayBlockingQueue<Request>(QUEUE_SIZE);
 		hungerState = HungerState.THINKING;
 		thirstState = ThirstState.THINKING;
+		playState = PlayState.INACTIVE;
 
 		// Open the GUI
 		PhilosopherGui gui = new PhilosopherGui(noGUI);
@@ -162,7 +168,9 @@ public class Philosopher {
 						gui.updateThirstState();
 					}
 
-				} else {
+				} else if(playState.equals(PlayState.PLAY_RIGHT) || playState.equals(PlayState.PLAY_LEFT)){
+					//TODO: Check to see if we should be done playing
+				}else {
 					// add everything
 					// if not sleep, this part handles cup handling
 
@@ -171,9 +179,9 @@ public class Philosopher {
 
 					// if sleep: ZZZ~~~
 					
-					
+					//THIRST STATES ###########################################################################
 					if (thirstState == ThirstState.THINKING){
-						if (Math.random() < 0.02){
+						if (Math.random() < 0.02 ){
 							thirstState = ThirstState.THIRSTY;
 							System.out.println("Philosopher has become thirsty");
 							gui.updateThirstState();
@@ -185,7 +193,7 @@ public class Philosopher {
 						}
 					}else if (thirstState == ThirstState.THIRSTY){
 						if (!leftHand.exists && ! rightHand.exists){
-							if (hasCup && hungerState.equals(HungerState.THINKING)) {
+							if (hasCup && hungerState.equals(HungerState.THINKING) && playState.equals(PlayState.INACTIVE)) {
 								thirstState = ThirstState.DRINKING;
 								System.out.println("Philosopher has started drinking");
 								gui.updateThirstState();
@@ -207,10 +215,10 @@ public class Philosopher {
 					
 					
 
-					// beyond this point, is our lab1-version code
+					// Hunger States ############################################################################################################
 
 					if (hungerState.equals(HungerState.THINKING)) {
-						if (!thirstState.equals(ThirstState.DRINKING) 
+						if (!thirstState.equals(ThirstState.DRINKING) && playState.equals(PlayState.INACTIVE)
 								&& (Math.random() < HUNGRY_PROBABILITY || hungerFlag)) {
 							hungerState = HungerState.HUNGRY;
 							hungryTurns = 0;
@@ -232,10 +240,28 @@ public class Philosopher {
 							eatingTurns++;
 						}
 					} else {
+						
+						
+						
+						//Add play state stuff
+						
+						if(hungerState.equals(HungerState.THINKING) && thirstState.equals(ThirstState.THINKING) && playState.equals(PlayState.INACTIVE)){
+							if(playLeftFlag){
+								playState = PlayState.WANT_PLAY_LEFT;
+								client.sendMessageToNeighbor(Request.CAN_WE_PLAY, true);
+								playLeftFlag = false;
+							} else if (playRightFlag){
+								playState = PlayState.WANT_PLAY_RIGHT;
+								client.sendMessageToNeighbor(Request.CAN_WE_PLAY, false);
+								playRightFlag = false;
+							}
+						}
+						
 						// Handle requests
 						Request request;
 						while ((request = requests.poll()) != null) {
 							
+							//Left side #############################################################################################################
 							if (request.getId() == idLeft) {
 								if (request.getMessage().equals(Request.CAN_I_HAVE_YOUR_FORK)) {
 									if (leftHand.clean) {
@@ -269,7 +295,28 @@ public class Philosopher {
 										requests.put(request);
 										break;
 									}
-								} else if (request.getMessage().equals(Request.YES_CUP)){
+								}else if (request.getMessage().equals(Request.CAN_WE_PLAY)){
+									if(playState.equals(PlayState.WANT_PLAY_LEFT)){
+										playState = PlayState.PLAY_LEFT;
+									} else if (playState.equals(PlayState.WANT_PLAY_RIGHT)){
+										//Ignoring for now
+										requests.put(request);
+									} else if (playState.equals(PlayState.INACTIVE)){
+										if(!rightHand.exists && thirstState.equals(ThirstState.THINKING) && hungerState.equals(HungerState.THINKING)){
+											client.sendMessageToNeighbor(Request.CAN_WE_PLAY, true);
+											playState = PlayState.PLAY_LEFT;
+										} else {
+											//Not Ready to Play, Ignoring for now. 
+											requests.put(request);
+										}
+									}
+								}else if (request.getMessage().equals(Request.STOP_PLAY)){
+									if(playState.equals(PlayState.PLAY_LEFT)){
+										playState = PlayState.INACTIVE;
+									} else {
+										System.err.println("Inconsistent State");
+									}
+								}else if (request.getMessage().equals(Request.YES_CUP)){
 									System.err.println("Recieved cup request from left");
 								} else {
 									System.err.println("Reieved unexpected response");
@@ -277,6 +324,8 @@ public class Philosopher {
 								
 								//System.out.println("Message found in queue from left: '" + request.getMessage() + "'");
 							
+								
+								//Right side #############################################################################################################
 							} else if (request.getId() == idRight) {
 								if (request.getMessage().equals(Request.CAN_I_HAVE_YOUR_FORK)) {
 									if (rightHand.clean) {
@@ -308,6 +357,29 @@ public class Philosopher {
 									} else {
 										System.err.println("Recieved duplicate cup");
 									}
+								}else if (request.getMessage().equals(Request.CAN_WE_PLAY)){
+									if(playState.equals(PlayState.WANT_PLAY_RIGHT)){
+										playState = PlayState.PLAY_RIGHT;
+									} else if (playState.equals(PlayState.WANT_PLAY_LEFT)){
+										//Ignoring for now
+										requests.put(request);
+									} else if (playState.equals(PlayState.INACTIVE)){
+										if(!leftHand.exists && thirstState.equals(ThirstState.THINKING) && hungerState.equals(HungerState.THINKING)){
+											client.sendMessageToNeighbor(Request.CAN_WE_PLAY, false);
+											playState = PlayState.PLAY_RIGHT;
+										} else {
+											//Not Ready to Play, Ignoring for now. 
+											requests.put(request);
+										}
+									}
+								}else if (request.getMessage().equals(Request.STOP_PLAY)){
+									if(playState.equals(PlayState.PLAY_RIGHT)){
+										playState = PlayState.INACTIVE;
+									} else {
+										System.err.println("Inconsistent State");
+									}
+								
+								
 								} else {
 									System.err.println("Reieved unexpected response");
 								}
