@@ -171,9 +171,23 @@ public class PhilosopherGui {
 	public void updatePlayState() {
 		if(disabled)
 			return;
+		
 		playStatus.setText(Philosopher.playState.toString());
+		if(Philosopher.playState.equals(PlayState.PLAY_LEFT) || Philosopher.playState.equals(PlayState.PLAY_RIGHT)) {
+			stopPlayB.setEnabled(true);
+			playLeftB.setEnabled(false);
+			playRightB.setEnabled(false);
+		} else if(Philosopher.playState.equals(PlayState.WANT_PLAY_LEFT) || Philosopher.playState.equals(PlayState.WANT_PLAY_RIGHT)) {
+			stopPlayB.setEnabled(false);
+			playLeftB.setEnabled(false);
+			playRightB.setEnabled(false);
+		} else {
+			stopPlayB.setEnabled(false);
+			playLeftB.setEnabled(true);
+			playRightB.setEnabled(true);
+		}
 	}
-
+		
 	public void updateHungerState() {
 		if(disabled)
 			return;
