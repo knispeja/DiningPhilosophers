@@ -185,10 +185,12 @@ public class Philosopher {
 							playState = PlayState.INACTIVE;
 							gui.updatePlayState();
 							stopPlayFlag = false;
+							client.sendMessageToNeighbor(Request.STOP_PLAY, false);
 						} else if (playState.equals(PlayState.PLAY_LEFT)){
 							playState = PlayState.INACTIVE;
 							gui.updatePlayState();
 							stopPlayFlag = false;
+							client.sendMessageToNeighbor(Request.STOP_PLAY, true);
 						} else {
 							System.err.println("Inconsistent print state");
 						}
