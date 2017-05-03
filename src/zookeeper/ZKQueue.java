@@ -91,7 +91,7 @@ public class ZKQueue extends SyncPrimitive{
                         if(tempValue < min) min = tempValue;
                     }
                     String padded = String.format("%010d", min);
-                    System.out.println("Temporary value: " + root + "/element" + padded);
+                    //System.out.println("Temporary value: " + root + "/element" + padded);
                     byte[] b = zk.getData(root + "/element" + padded,
                                 false, stat);
                     zk.delete(root + "/element" + padded, 0);
