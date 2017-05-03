@@ -8,16 +8,36 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
 
 public class PhilosopherGui {
+	
+	private static final String RAND_BTN_TEXT_WHILE_ON = "Random Mode Off";
+	private static final String RAND_BTN_TEXT_WHILE_OFF = "Random Mode On";
+	
+	private static final int GRID_HGAP = 2;
+	private static final int GRID_VGAP = 5;
+	
+	private static final int EMPTY_BORDER_SIZE_TOP = 20;
+	private static final int EMPTY_BORDER_SIZE_BOT = 9;
 	
 	private JLabel status;
 	private JLabel leftFork; 
 	private JLabel rightFork;
 	private JLabel cup;
+	private JButton thirstyB;
 	private JButton hungryB;
 	private JButton satisB;
+	private JButton sleepB;
+	private JButton wakeB;
+	private JButton randB;
+	private JButton stopPlayB;
+	
+	private JButton playLeftB;
+	private JButton playRightB;
+	
 	private JLabel drinkingStatus;
+	private JLabel playStatus;
 	
 	private boolean disabled;
 	
@@ -31,11 +51,7 @@ public class PhilosopherGui {
         guiFrame.setTitle("Philosopher");
         guiFrame.setSize(300,150);
         
-        JLabel message = new JLabel("I am a Philosopher.");
         status = new JLabel("I am thinking");
-        JPanel messagePanel = new JPanel();
-        
-        messagePanel.add(message);
         
         JPanel foodStatusPanel = new JPanel();
         leftFork = new JLabel("fork");
@@ -45,7 +61,6 @@ public class PhilosopherGui {
         leftFork.setSize(30,20);
         rightFork.setSize(30,20);
         
-
         
         foodStatusPanel.add(leftFork);
         foodStatusPanel.add(status);
@@ -60,29 +75,72 @@ public class PhilosopherGui {
         drinkStatusPanel.add(cup);
         drinkStatusPanel.add(drinkingStatus);
         
+        JPanel playStatusPanel = new JPanel();
+        playStatus = new JLabel("");
+        playStatusPanel.add(playStatus);
+        
         
         
         hungryB = new JButton("Become Hungry");
+        thirstyB = new JButton("Become Thirsty");
         satisB = new JButton("Be Satisfied");
+        sleepB = new JButton("Sleep Forever!");
+        wakeB = new JButton("Wake Up!");
+        randB = new JButton(RAND_BTN_TEXT_WHILE_ON);
         hungryB.addActionListener(a -> {Philosopher.hungerFlag = true;});
+        thirstyB.addActionListener(a -> {Philosopher.thirstFlag = true;});
         satisB.addActionListener(a -> {Philosopher.satisfactionFlag = true;});
+        sleepB.addActionListener(a -> {Philosopher.sleepFlag = true;});
+        wakeB.addActionListener(a -> {Philosopher.wakenFlag = true;});
+        randB.addActionListener(a -> {
+        	Philosopher.randomMode = !Philosopher.randomMode;
+        	if(Philosopher.randomMode) randB.setText(RAND_BTN_TEXT_WHILE_ON);
+        	else randB.setText(RAND_BTN_TEXT_WHILE_OFF);
+        });
+        
+        playLeftB = new JButton("Play Game (Left)");
+        playLeftB.addActionListener(a -> {Philosopher.playLeftFlag = true;});
+        playRightB = new JButton("Play Game (Right)");
+        playRightB.addActionListener(a -> {Philosopher.playRightFlag = true;});
+        stopPlayB = new JButton("Stop Playing");
+        stopPlayB.addActionListener(a -> {Philosopher.stopPlayFlag = true;});        
+        
+        
         
         JPanel buttonPanel = new JPanel();
+        
+        
+        
+        buttonPanel.add(playLeftB);
+        buttonPanel.add(stopPlayB);
+        buttonPanel.add(playRightB);
         buttonPanel.add(hungryB);
+        buttonPanel.add(thirstyB);
         buttonPanel.add(satisB);
+        buttonPanel.add(sleepB);
+        buttonPanel.add(wakeB);
+        buttonPanel.add(randB);
+        buttonPanel.setLayout(new GridLayout(3, 3, GRID_HGAP, GRID_VGAP));
+        buttonPanel.setBorder(new EmptyBorder(EMPTY_BORDER_SIZE_BOT, EMPTY_BORDER_SIZE_BOT, EMPTY_BORDER_SIZE_BOT, EMPTY_BORDER_SIZE_BOT));
+        
         
         JPanel infoPanel = new JPanel();
         
-
-        infoPanel.setLayout(new GridLayout(2,1));
+        infoPanel.setLayout(new GridLayout(3, 1));
         infoPanel.add(foodStatusPanel);
         infoPanel.add(drinkStatusPanel);
+        infoPanel.add(playStatusPanel);
+        infoPanel.setBorder(new EmptyBorder(EMPTY_BORDER_SIZE_TOP, EMPTY_BORDER_SIZE_TOP, EMPTY_BORDER_SIZE_TOP, EMPTY_BORDER_SIZE_TOP));
         
-        guiFrame.add(messagePanel, BorderLayout.NORTH);
-        
+
+        guiFrame.add(infoPanel, BorderLayout.NORTH);
         guiFrame.add(buttonPanel, BorderLayout.SOUTH);
-        guiFrame.add(infoPanel, BorderLayout.CENTER);
         
+
+        
+        
+        
+        guiFrame.pack();
         guiFrame.setVisible(true);
         update();
 	}
@@ -93,6 +151,7 @@ public class PhilosopherGui {
 		
 		updateHungerState();
 		updateThirstState();
+		updatePlayState();
 		updateForks();
 		updateCup();
 	}
@@ -107,6 +166,12 @@ public class PhilosopherGui {
 			cup.setText("  ");
 		}
 		
+	}
+	
+	public void updatePlayState() {
+		if(disabled)
+			return;
+		playStatus.setText(Philosopher.playState.toString());
 	}
 
 	public void updateHungerState() {
@@ -131,6 +196,24 @@ public class PhilosopherGui {
 			return;
 		
 		drinkingStatus.setText(Philosopher.thirstState.toString());
+		
+		if(Philosopher.thirstState.equals(ThirstState.DRINKING)) {
+			thirstyB.setEnabled(false);
+			sleepB.setEnabled(true);
+			wakeB.setEnabled(false);
+		} else if(Philosopher.thirstState.equals(ThirstState.SLEEPING)) {
+			thirstyB.setEnabled(true);
+			sleepB.setEnabled(true);
+			wakeB.setEnabled(true);
+		} else if(Philosopher.thirstState.equals(ThirstState.THINKING)) {
+			thirstyB.setEnabled(true);
+			sleepB.setEnabled(true);
+			wakeB.setEnabled(false);
+		} else { // Thirsty
+			thirstyB.setEnabled(false);
+			sleepB.setEnabled(true);
+			wakeB.setEnabled(false);
+		}
 	}
 	
 	public void updateForks() {
