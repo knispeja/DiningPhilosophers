@@ -180,6 +180,15 @@ public class Philosopher {
 					}
 
 				} else if(playState.equals(PlayState.PLAY_RIGHT) || playState.equals(PlayState.PLAY_LEFT)){
+					if(!requests.isEmpty()){
+						Request request = requests.poll();
+						if(request.getMessage().equals(Request.STOP_PLAY)){
+							stopPlayFlag = true;
+						} else {
+							requests.put(request);
+						}
+					}
+					
 					if(stopPlayFlag){
 						if(playState.equals(PlayState.PLAY_RIGHT)){
 							playState = PlayState.INACTIVE;
