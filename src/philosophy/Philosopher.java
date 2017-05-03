@@ -183,7 +183,17 @@ public class Philosopher {
 					if(!requests.isEmpty()){
 						Request request = requests.poll();
 						if(request.getMessage().equals(Request.STOP_PLAY)){
-							stopPlayFlag = true;
+							if(playState.equals(PlayState.PLAY_RIGHT)){
+								playState = PlayState.INACTIVE;
+								gui.updatePlayState();
+								stopPlayFlag = false;
+							} else if (playState.equals(PlayState.PLAY_LEFT)){
+								playState = PlayState.INACTIVE;
+								gui.updatePlayState();
+								stopPlayFlag = false;
+							} else {
+								System.err.println("Inconsistent print state");
+							}
 						} else {
 							requests.put(request);
 						}
@@ -356,8 +366,6 @@ public class Philosopher {
 									if(playState.equals(PlayState.PLAY_LEFT)){
 										playState = PlayState.INACTIVE;
 										gui.updatePlayState();
-									} else {
-										System.err.println("Inconsistent State");
 									}
 								}else if (request.getMessage().equals(Request.YES_CUP)){
 									System.err.println("Recieved cup request from left");
@@ -421,9 +429,7 @@ public class Philosopher {
 									if(playState.equals(PlayState.PLAY_RIGHT)){
 										playState = PlayState.INACTIVE;
 										gui.updatePlayState();
-									} else {
-										System.err.println("Inconsistent State");
-									}
+									} 
 								
 								
 								} else {
