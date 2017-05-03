@@ -231,6 +231,7 @@ public class Philosopher {
 							thirstState = ThirstState.SLEEPING;
 							System.out.println("Philosopher has fallen asleep");
 							sleepingTurns = 0;
+							gui.updateThirstState();
 						}
 						
 					}else{
