@@ -29,8 +29,8 @@ public class ZServer implements Runnable{
 	@Override
 	public void run() {
 
-		ZKQueue leftQueue = new ZKQueue(zkAddress, leftID+"-"+thisID);
-		ZKQueue rightQueue = new ZKQueue(zkAddress, rightID+"-"+thisID);		
+		ZKQueue leftQueue = new ZKQueue(zkAddress, "/" + leftID+"-"+thisID);
+		ZKQueue rightQueue = new ZKQueue(zkAddress, "/" + rightID+"-"+thisID);		
 		
 		while(true) {
 			try {

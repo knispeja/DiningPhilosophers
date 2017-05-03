@@ -25,8 +25,8 @@ public class ZClient implements ClientInterface {
 		this.rightID = rightID;
 		this.thisID = thisID;
 		
-		leftZKQueue = new ZKQueue(zkAddress, thisID+"-"+leftID);
-		rightZKQueue = new ZKQueue(zkAddress, thisID+"-"+rightID);
+		leftZKQueue = new ZKQueue(zkAddress, "/" + thisID+"-"+leftID);
+		rightZKQueue = new ZKQueue(zkAddress, "/" + thisID+"-"+rightID);
 	}
 	
 
