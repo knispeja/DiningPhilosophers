@@ -3,8 +3,7 @@ package philosophy;
 public enum ThirstState {
 	THINKING("My thirst is quenched."),
 	THIRSTY("I'm parched..."), 
-	DRINKING("gudong gudong"),
-	SLEEPING("~~ZZ~~ZZ~~***");
+	DRINKING("gudong gudong");
 	
 	private final String fieldString;
 	private ThirstState(String value) {

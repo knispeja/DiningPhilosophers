@@ -4,8 +4,7 @@ import java.util.concurrent.BlockingQueue;
 
 import org.apache.zookeeper.KeeperException;
 
-import zookeeper.ZClient;
-import zookeeper.ZServer;
+import zookeeper.ZKBool;
 
 /**
  * @author Peter Larson
@@ -19,10 +18,7 @@ public class Philosopher {
 	private static final String RIGHT_PHILOSOPHER_ID = "-r";
 	private static final String THIS_PHILOSOPHER_ID = "-i";
 	private static final String ZOOKEEPER = "-z";
-	private static final String HAS_LEFT_FORK = "-hasleftfork";
-	private static final String HAS_RIGHT_FORK = "-hasrightfork";
-	private static final String HAS_CUP = "-hascup";
-	private static final String NO_GUI = "-nogui";
+	private static final String IS_LEADER = "-leader";
 	private static final String HELP = "-help";
 
 	// Queue size, should be [# of possible requests]*[# of neighbors] = 2*2 = 4
@@ -55,11 +51,14 @@ public class Philosopher {
 	public static boolean playRightFlag = false;
 	public static boolean stopPlayFlag = false;
 	
-	public static Fork leftHand;
-	public static Fork rightHand;
+	
+	public static Fork leftFork;
+	public static Fork rightFork;
+	
 	public static HungerState hungerState;
 	public static ThirstState thirstState;
 	public static PlayState playState;
+	public static SleepState sleepState;
 	
 	// philosophers asks to their right, and pass cups back to left.
 	public static boolean hasCup, hasAskedRight, beAskedByLeft;
@@ -68,8 +67,8 @@ public class Philosopher {
 	public static void main(String[] args) throws InterruptedException, KeeperException {
 		
 		// Initialize these variables using args if available
-		leftHand = new Fork();
-		rightHand = new Fork();
+		leftFork = new Fork();
+		rightFork = new Fork();
 
 		int idLeft = -1;
 		int idRight = -1;
@@ -83,6 +82,8 @@ public class Philosopher {
 
 		boolean noGUI = false;
 
+		boolean leader = false;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+		
 		// Parse command line arguments
 		for (int i = 0; i < args.length; i++) {
 			String arg = args[i].toLowerCase();
@@ -94,21 +95,13 @@ public class Philosopher {
 				thisID = Integer.parseInt(args[++i]);
 			} else if (arg.equals(ZOOKEEPER)) {
 				zIP = args[++i];
-			} else if (arg.equals(HAS_LEFT_FORK)) {
-				leftHand.exists = true;
-			} else if (arg.equals(HAS_RIGHT_FORK)) {
-				rightHand.exists = true;
-			} else if (arg.equals(NO_GUI)) {
-				noGUI = true;
-			} else if (arg.equals(HAS_CUP)) {
-				hasCup = true;
+			} else if (arg.equals(IS_LEADER)) {
+				leader = true;
 			} else if (arg.equals(HELP)) {
 				System.out.println("Valid command line arguments (given in any order): ");
 				System.out.println("\t-l [left_philosopher_id]");
 				System.out.println("\t-r [right_philosopher_id]");
 				System.out.println("\t-i [this_philosopher_id]");
-				System.out.println("\t-hasLeftFork: philosopher starts with the left fork");
-				System.out.println("\t-hasRightFork: philosopher starts with the right fork");
 				System.out.println("\t-noGUI: the GUI will not open");
 				return;
 			} else {
@@ -122,359 +115,258 @@ public class Philosopher {
 			return;
 		}
 
+		String lStr = Integer.toString(idLeft);
+		String tStr = Integer.toString(thisID);
+		String rStr = Integer.toString(idRight);
+		
+		//Create ZK Nodes
+		ZKBool zkLeftFork = new ZKBool(zIP, "F"+lStr+"-"+tStr, true);
+		ZKBool zkRightFork = new ZKBool(zIP, "F"+tStr+"-"+rStr, true);
+		
+		ZKBool zkPlayOutLeft = new ZKBool(zIP, "P"+tStr+"-"+lStr, false);
+		ZKBool zkPlayInLeft = new ZKBool(zIP, "P"+lStr+"-"+tStr, false);		
+		ZKBool zkPlayOutRight = new ZKBool(zIP, "P"+tStr+"-"+rStr, false);
+		ZKBool zkPlayInRight = new ZKBool(zIP, "P"+rStr+"-"+tStr, false);	
+		ZKBool zkTurn = new ZKBool(zIP, "T"+tStr, false);	
+		if(leader){
+			zkTurn.set(true);		
+		} 
+		ZKBool zkLeftTurn = new ZKBool(zIP, "T"+lStr, false);
+		
+		//ZKBool zkMyCup = new ZKBool(zIP, "C"+tStr);
+		ZKBool zkGlobalCup = new ZKBool(zIP, "C-GLOBAL", true);
+		
 		// Initialize some important values
-		BlockingQueue<Request> requests = new ArrayBlockingQueue<Request>(QUEUE_SIZE);
 		hungerState = HungerState.THINKING;
 		thirstState = ThirstState.THINKING;
 		playState = PlayState.INACTIVE;
+		sleepState = SleepState.THINKING;
 
 		// Open the GUI
 		PhilosopherGui gui = new PhilosopherGui(noGUI);
 
-		// Create new instances of Client and Server
-		ZClient client = new ZClient(idLeft, idRight, thisID, zIP);
-		ZServer server = new ZServer(requests, zIP, idLeft, idRight, thisID);
-
-		// Create and run Client and Server threads
-		//new Thread(client).start();
-		new Thread(server).start();
 
 		// Loop for the duration of the program...
-		long time = System.currentTimeMillis();
 		int hungryTurns = 0;
 		int eatingTurns = 0;
 		int drinkingTurns = 0;
-		int sleepingTurns = 0;
 		int drinkingTurnThreshold = 4;
-		while (true) {
-
-			if (System.currentTimeMillis() - time > DELAY_BETWEEN_TURNS_MS) {
-
-				time = System.currentTimeMillis();
-
-				if (sleepFlag) {
-					if(thirstState != ThirstState.SLEEPING) {
-						thirstState = ThirstState.SLEEPING;
-						gui.updateThirstState();
-					}
-					sleepingTurns = 0;
-				}
+	
+		
+		while(true){
+			Thread.sleep(DELAY_BETWEEN_TURNS_MS);
+			
+			if(zkTurn.get()){
 				
-				if(thirstState.equals(ThirstState.DRINKING) && hungerState.equals(HungerState.EATING)){
-					System.err.println("Drinking and Eating at the same time");
-				}
-				
-				if (thirstState == ThirstState.SLEEPING) {
-					// increment sleep timer
-					sleepingTurns++;
-					if (sleepingTurns > TURNS_TAKEN_TO_SLEEP || wakenFlag){
-						wakenFlag = false;
+				//Sleeping
+				if(amNeutral()){
+					if(sleepFlag){
+						sleepState = SleepState.SLEEPING;
 						sleepFlag = false;
-						thirstState = ThirstState.THINKING;
-						if(beAskedByLeft && hasCup){
-							beAskedByLeft = false;
-							client.sendMessageToNeighbor(Request.YES_CUP, true);
-							hasCup = false;
-						}
-						gui.updateThirstState();
 					}
-
-				} else if(playState.equals(PlayState.PLAY_RIGHT) || playState.equals(PlayState.PLAY_LEFT)){
-					if(!requests.isEmpty()){
-						Request request = requests.poll();
-						if(request.getMessage().equals(Request.STOP_PLAY)){
-							if(playState.equals(PlayState.PLAY_RIGHT)){
-								playState = PlayState.INACTIVE;
-								gui.updatePlayState();
-								stopPlayFlag = false;
-							} else if (playState.equals(PlayState.PLAY_LEFT)){
-								playState = PlayState.INACTIVE;
-								gui.updatePlayState();
-								stopPlayFlag = false;
-							} else {
-								System.err.println("Inconsistent print state");
-							}
-						} else {
-							requests.put(request);
+				}
+				
+				if(sleepState.equals(SleepState.SLEEPING)){
+					if(wakenFlag){
+						sleepState = SleepState.THINKING;
+						wakenFlag = false;
+					}
+				}
+				//Playing
+				if(amNeutral()){
+					if(playState.equals(PlayState.INACTIVE)){
+						if(playLeftFlag){
+							playLeftFlag = false;
+							zkPlayOutLeft.set(true);
+							playState = PlayState.WANT_PLAY_LEFT;
+						}
+						else if(playRightFlag){
+							playRightFlag = false;
+							zkPlayOutRight.set(true);
+							playState = PlayState.WANT_PLAY_RIGHT;
 						}
 					}
+					
+					if(zkPlayInLeft.get()){
+						if(playState.equals(PlayState.WANT_PLAY_LEFT) || playState.equals(PlayState.INACTIVE)){
+							playState = PlayState.PLAY_LEFT;
+							zkPlayOutLeft.set(true);
+						}
+					}
+					if(zkPlayInRight.get()){
+						if(playState.equals(PlayState.WANT_PLAY_RIGHT) || playState.equals(PlayState.INACTIVE)){
+							playState = PlayState.PLAY_RIGHT;
+							zkPlayOutRight.set(true);
+						}
+					}
+					
+				} 
+				//Not Neutral
+				if(playState.equals(PlayState.PLAY_LEFT) && !zkPlayInLeft.get()){
+					zkPlayOutLeft.set(false);
+					playState = PlayState.INACTIVE;
+				} 
+				if(playState.equals(PlayState.PLAY_RIGHT) && !zkPlayInRight.get()){
+					zkPlayOutRight.set(false);
+					playState = PlayState.INACTIVE;
+				}
+				
+				
+				if(playState.equals(PlayState.PLAY_LEFT) || playState.equals(PlayState.PLAY_RIGHT)){
+					if(leftFork.exists){
+						leftFork.exists = false;
+						zkLeftFork.set(true);
+					}
+					
+					if(rightFork.exists){
+						rightFork.exists = false;
+						zkRightFork.set(true);
+					}
+					if(hasCup){
+						hasCup = false;
+						zkGlobalCup.set(true);
+					}
+					
 					
 					if(stopPlayFlag){
-						if(playState.equals(PlayState.PLAY_RIGHT)){
-							playState = PlayState.INACTIVE;
-							gui.updatePlayState();
-							stopPlayFlag = false;
-							client.sendMessageToNeighbor(Request.STOP_PLAY, false);
-						} else if (playState.equals(PlayState.PLAY_LEFT)){
-							playState = PlayState.INACTIVE;
-							gui.updatePlayState();
-							stopPlayFlag = false;
-							client.sendMessageToNeighbor(Request.STOP_PLAY, true);
-						} else {
-							System.err.println("Inconsistent print state");
+						stopPlayFlag = false;
+						if(playState.equals(PlayState.PLAY_LEFT)){
+							zkPlayOutLeft.set(false);
 						}
+						if(playState.equals(PlayState.PLAY_RIGHT)){
+							zkPlayOutRight.set(false);
+						}
+						playState = PlayState.INACTIVE;
+						
 					}
-				}else {
-					// add everything
-					// if not sleep, this part handles cup handling
-
-					// if not sleep, philosopher can DrinkThinking or thirsty, or
-					// drinking
-
-					// if sleep: ZZZ~~~
-					
-					//THIRST STATES ###########################################################################
-					if (thirstState == ThirstState.THINKING){
-						if ((randomMode && Math.random() < 0.02) || thirstFlag){
+				}
+				
+				
+				//Drinking
+				if(amNeutral()){
+					if(thirstState.equals(ThirstState.THINKING)){
+						if(thirstFlag){
 							thirstFlag = false;
 							thirstState = ThirstState.THIRSTY;
-							System.out.println("Philosopher has become thirsty");
-							gui.updateThirstState();
-							// send out message to RIGHT, asking for cups
-							if (!hasCup && !hasAskedRight){
-								client.sendMessageToNeighbor(Request.CAN_I_HAVE_YOUR_CUP, false);
-								hasAskedRight = true;
-							}
 						}
-					}else if (thirstState == ThirstState.THIRSTY){
-						if (!leftHand.exists && ! rightHand.exists){
-							if (hasCup && hungerState.equals(HungerState.THINKING) && playState.equals(PlayState.INACTIVE)) {
-								thirstState = ThirstState.DRINKING;
-								System.out.println("Philosopher has started drinking");
-								gui.updateThirstState();
-							}
-						}
-						
-					}else if (thirstState == ThirstState.DRINKING){
-						drinkingTurns++;
-						if(drinkingTurns > drinkingTurnThreshold || satisfactionFlag){
-							satisfactionFlag = false;
-							thirstState = ThirstState.SLEEPING;
-							System.out.println("Philosopher has fallen asleep");
-							sleepingTurns = 0;
-							gui.updateThirstState();
-						}
-						
-					}else{
-						System.err.println("drinking state messed up");
-						System.exit(1);
 					}
 					
+					if(thirstState.equals(ThirstState.THIRSTY)){
+						if(zkGlobalCup.get()){
+							zkGlobalCup.set(false);
+							if(hasCup){
+								System.err.println("cup error");
+							}
+							hasCup = true;
+						}
+						
+						if(hasCup){
+							thirstState = ThirstState.DRINKING;
+						}
+					}
 					
-
-					// Hunger States ############################################################################################################
-
-					if (hungerState.equals(HungerState.THINKING)) {
-						if (!thirstState.equals(ThirstState.DRINKING) && playState.equals(PlayState.INACTIVE) 
-								&& ((randomMode && Math.random() < HUNGRY_PROBABILITY) || hungerFlag)) {
+				}
+				if(thirstState.equals(ThirstState.DRINKING)){
+					drinkingTurns++;
+					if(drinkingTurns > drinkingTurnThreshold){
+						drinkingTurns = 0;
+						thirstState = ThirstState.THINKING;
+						if(hasCup)
+							zkGlobalCup.set(true);
+						else
+							System.err.println("Cup error");
+						hasCup = false;
+						
+						sleepState = SleepState.SLEEPING;
+						if(leftFork.exists){
+							zkLeftFork.set(true);
+						}
+						if(rightFork.exists){
+							zkRightFork.set(true);
+						}
+						leftFork.exists = false;
+						rightFork.exists = false;
+					}
+				}
+				
+				//Eating
+				if(amNeutral()){
+					if(hungerState.equals(HungerState.THINKING)){
+						if(hungerFlag){
+							hungerFlag = false;
 							hungerState = HungerState.HUNGRY;
 							hungryTurns = 0;
-							hungerFlag = false;
-							gui.updateHungerState();
 						}
 					}
-
-					if (hungerState.equals(HungerState.EATING)) {
-						if (eatingTurns > Philosopher.TURNS_TAKEN_TO_EAT || satisfactionFlag) {
-							System.out.println("Finished Eating");
-							eatingTurns = 0;
-							leftHand.clean = false;
-							rightHand.clean = false;
-							hungerState = HungerState.THINKING;
-							satisfactionFlag = false;
-							gui.updateHungerState();
-						} else {
-							eatingTurns++;
+					
+					if(hungerState.equals(HungerState.HUNGRY)){
+						hungryTurns++;
+						if(hungryTurns > TURNS_HUNGRY_UNTIL_DEATH){
+							//System.out.println("RIP. Death.");
 						}
-					} else {
-						
-						
-						
-						//Add play state stuff
-						
-						if(hungerState.equals(HungerState.THINKING) && thirstState.equals(ThirstState.THINKING) && playState.equals(PlayState.INACTIVE)){
-							if(playLeftFlag && !rightHand.exists){
-								playState = PlayState.WANT_PLAY_LEFT;
-								client.sendMessageToNeighbor(Request.CAN_WE_PLAY, true);
-								playLeftFlag = false;
-								gui.updatePlayState();
-							} else if (playRightFlag && !leftHand.exists){
-								playState = PlayState.WANT_PLAY_RIGHT;
-								client.sendMessageToNeighbor(Request.CAN_WE_PLAY, false);
-								playRightFlag = false;
-								gui.updatePlayState();
-							}
-						}
-						
-						// Handle requests
-						Request request;
-						while ((request = requests.poll()) != null) {
-							
-							//Left side #############################################################################################################
-							if (request.getId() == idLeft) {
-								if (request.getMessage().equals(Request.CAN_I_HAVE_YOUR_FORK)) {
-									if (leftHand.clean) {
-										//System.out.println("Ignoring for now: ");
-										requests.put(request);
-										break;
-									} else {
-										//System.out.println("Giving my left neighbor the fork, because: ");
-										client.sendMessageToNeighbor(Request.YES_FORK, true);
-										leftHand.exists = false;
-										gui.updateForks();
-									}
-								} else if (request.getMessage().equals(Request.YES_FORK)) {
-									leftHand.exists = true;
-									leftHand.askedFor = false;
-									leftHand.clean = true;
-								} else if (request.getMessage().equals(Request.CAN_I_HAVE_YOUR_CUP)){
-									if(thirstState.equals(ThirstState.THINKING)){
-										if(hasCup){
-											client.sendMessageToNeighbor(Request.YES_CUP, true);
-											hasCup = false;
-										} else if(!hasAskedRight){
-											client.sendMessageToNeighbor(Request.CAN_I_HAVE_YOUR_CUP, false);
-											hasAskedRight = true;
-											beAskedByLeft = true;
-										} // else: hasaskedright = true, so do nothing. 
-										
-										//Drinking or thirsty
-									} else {
-										//System.out.println("Ignoring cup request for now: ");
-										requests.put(request);
-										break;
-									}
-								}else if (request.getMessage().equals(Request.CAN_WE_PLAY)){
-									if(playState.equals(PlayState.WANT_PLAY_LEFT)){
-										playState = PlayState.PLAY_LEFT;
-										gui.updatePlayState();
-
-									} else if (playState.equals(PlayState.WANT_PLAY_RIGHT)){
-										//Ignoring for now
-										requests.put(request);
-										break;
-									} else if (playState.equals(PlayState.INACTIVE)){
-										if(!rightHand.exists && !thirstState.equals(ThirstState.DRINKING) && hungerState.equals(HungerState.THINKING)){
-											client.sendMessageToNeighbor(Request.CAN_WE_PLAY, true);
-											playState = PlayState.PLAY_LEFT;
-											gui.updatePlayState();
-										} else {
-											//Not Ready to Play, Ignoring for now. 
-											requests.put(request);
-											break;
-										}
-									}
-								}else if (request.getMessage().equals(Request.STOP_PLAY)){
-									if(playState.equals(PlayState.PLAY_LEFT)){
-										playState = PlayState.INACTIVE;
-										gui.updatePlayState();
-									}
-								}else if (request.getMessage().equals(Request.YES_CUP)){
-									System.err.println("Recieved cup request from left");
-								} else {
-									System.err.println("Reieved unexpected response");
-								}
-								
-								//System.out.println("Message found in queue from left: '" + request.getMessage() + "'");
-							
-								
-								//Right side #############################################################################################################
-							} else if (request.getId() == idRight) {
-								if (request.getMessage().equals(Request.CAN_I_HAVE_YOUR_FORK)) {
-									if (rightHand.clean) {
-										//System.out.println("Ignoring for now: ");
-										requests.put(request);
-										break;
-									} else {
-										//System.out.println("Giving my right neighbor the fork, because: ");
-										client.sendMessageToNeighbor(Request.YES_FORK, false);
-										rightHand.exists = false;
-									}
-								} else if (request.getMessage().equals(Request.YES_FORK)) {
-									rightHand.exists = true;
-									rightHand.askedFor = false;
-									rightHand.clean = true;
-								} else if (request.getMessage().equals(Request.CAN_I_HAVE_YOUR_CUP)){
-									System.err.println("Recieved cup confirmation from right");
-								} else if (request.getMessage().equals(Request.YES_CUP)){
-									hasAskedRight = false;
-									if(thirstState.equals(ThirstState.THIRSTY)){
-										hasCup = true;
-									} else if(thirstState.equals(ThirstState.THINKING)){
-										if(beAskedByLeft){
-											client.sendMessageToNeighbor(Request.YES_CUP, true);
-											hasCup = false;
-										} else {
-											System.err.println("Why do I have this cup? I've been drinking too much...");
-											hasCup = true;
-										}
-									} else {
-										System.err.println("Recieved duplicate cup");
-									}
-								}else if (request.getMessage().equals(Request.CAN_WE_PLAY)){
-									if(playState.equals(PlayState.WANT_PLAY_RIGHT)){
-										playState = PlayState.PLAY_RIGHT;
-										gui.updatePlayState();
-									} else if (playState.equals(PlayState.WANT_PLAY_LEFT)){
-										//Ignoring for now
-										requests.put(request);
-										break;
-									} else if (playState.equals(PlayState.INACTIVE)){
-										if(!leftHand.exists && !thirstState.equals(ThirstState.DRINKING) && hungerState.equals(HungerState.THINKING)){
-											client.sendMessageToNeighbor(Request.CAN_WE_PLAY, false);
-											playState = PlayState.PLAY_RIGHT;
-											gui.updatePlayState();
-										} else {
-											//Not Ready to Play, Ignoring for now. 
-											requests.put(request);
-											break;
-										}
-									}
-								}else if (request.getMessage().equals(Request.STOP_PLAY)){
-									if(playState.equals(PlayState.PLAY_RIGHT)){
-										playState = PlayState.INACTIVE;
-										gui.updatePlayState();
-									} 
-								
-								
-								} else {
-									System.err.println("Reieved unexpected response");
-								}
-								//System.out.println("Message found in queue from right: '" + request.getMessage() + "'");
-							} else {
-								System.err.println("Request received from invalid source: " + request.getId());
-							}
-							gui.update();
-						}
-					}
-
-					if (hungerState.equals(HungerState.HUNGRY)) {
-
-						if (hungryTurns++ == Philosopher.TURNS_HUNGRY_UNTIL_DEATH) {
-							System.out.println("This philosopher has died of starvation.");
-						}
-
-						if (!leftHand.exists && !leftHand.askedFor) {
-							//System.out.println("Asking my left neighbor for his fork...");
-							client.sendMessageToNeighbor(Request.CAN_I_HAVE_YOUR_FORK, true);
-							leftHand.askedFor = true;
-						}
-						if (!rightHand.exists && !rightHand.askedFor) {
-							//System.out.println("Asking my right neighbor for his fork...");
-							client.sendMessageToNeighbor(Request.CAN_I_HAVE_YOUR_FORK, false);
-							rightHand.askedFor = true;
-						}
-
-						if (leftHand.exists && rightHand.exists) {
-							System.out.println("Beginning to eat!");
+						if(zkLeftFork.get() && zkRightFork.get()){
+							zkLeftFork.set(false);
+							zkRightFork.set(false);
+							leftFork.exists = true;
+							rightFork.exists = true;
 							hungerState = HungerState.EATING;
-							gui.updateHungerState();
 						}
 					}
 				}
+				
+				if(hungerState.equals(HungerState.EATING)){
+					eatingTurns++;
+					if(eatingTurns > TURNS_TAKEN_TO_EAT || satisfactionFlag){
+						eatingTurns = 0;
+						if(satisfactionFlag)
+							satisfactionFlag = false;
+						hungerState = hungerState.THINKING;
+						
+						if(leftFork.exists)
+							zkLeftFork.set(true);
+						else
+							System.err.println("Fork State Error");
+						if(rightFork.exists)
+							zkRightFork.set(true);
+						else
+							System.err.println("Fork State Error");
+						leftFork.exists = false;
+						rightFork.exists = false;
+					}
+					
+				}
+				//Turn Logic
+				zkTurn.set(false);
+				zkLeftTurn.set(true);
+				
+				//GUI update
+				gui.update();
 			}
-
 			
 		}
+		
+	
+	}
+	
+	static boolean amNeutral(){
+		int exCount = 0;
+		if(Philosopher.hungerState.equals(HungerState.EATING))
+			exCount++;
+		if(Philosopher.sleepState.equals(SleepState.SLEEPING))
+			exCount++;
+		if(Philosopher.thirstState.equals(ThirstState.DRINKING))
+			exCount++;
+		if(Philosopher.playState.equals(PlayState.PLAY_LEFT) || Philosopher.playState.equals(PlayState.PLAY_RIGHT))
+			exCount++;
+		if(exCount == 0)
+			return true;
+		
+		if(exCount == 1)
+			return false;
+		
+		if(exCount > 1)
+			System.err.println("Invalid State");
+		
+		return false;
 	}
 }

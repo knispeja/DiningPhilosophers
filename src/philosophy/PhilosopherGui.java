@@ -177,11 +177,13 @@ public class PhilosopherGui {
 			stopPlayB.setEnabled(true);
 			playLeftB.setEnabled(false);
 			playRightB.setEnabled(false);
-		} else if(Philosopher.playState.equals(PlayState.WANT_PLAY_LEFT) || Philosopher.playState.equals(PlayState.WANT_PLAY_RIGHT)) {
+		} 
+		else if(Philosopher.playState.equals(PlayState.WANT_PLAY_LEFT) || Philosopher.playState.equals(PlayState.WANT_PLAY_RIGHT)) {
 			stopPlayB.setEnabled(false);
 			playLeftB.setEnabled(false);
 			playRightB.setEnabled(false);
-		} else {
+		} 
+		else {
 			stopPlayB.setEnabled(false);
 			playLeftB.setEnabled(true);
 			playRightB.setEnabled(true);
@@ -215,10 +217,11 @@ public class PhilosopherGui {
 			thirstyB.setEnabled(false);
 			sleepB.setEnabled(true);
 			wakeB.setEnabled(false);
-		} else if(Philosopher.thirstState.equals(ThirstState.SLEEPING)) {
-			thirstyB.setEnabled(true);
-			sleepB.setEnabled(true);
+		} else if(Philosopher.sleepState.equals(SleepState.SLEEPING)) {
+			thirstyB.setEnabled(false);
+			sleepB.setEnabled(false);
 			wakeB.setEnabled(true);
+			drinkingStatus.setText(SleepState.SLEEPING.toString());
 		} else if(Philosopher.thirstState.equals(ThirstState.THINKING)) {
 			thirstyB.setEnabled(true);
 			sleepB.setEnabled(true);
@@ -234,13 +237,13 @@ public class PhilosopherGui {
 		if(disabled)
 			return;
 		
-		if(Philosopher.leftHand.exists){
+		if(Philosopher.leftFork.exists){
 			leftFork.setText("fork");
 		} else {
 			leftFork.setText("   ");
 		}
 		
-		if(Philosopher.rightHand.exists){
+		if(Philosopher.rightFork.exists){
 			rightFork.setText("fork");
 		} else {
 			rightFork.setText("   ");
